@@ -1,0 +1,19 @@
+# Ignore compiled bytecode files and __pycache__ directories
+*.pyc
+__pycache__/
+*/__pycache__/
+media/
+/venv/
+# Ignore environment files
+/.env
+/.env
+venv/
+# Ignore VSCode workspace settings
+.vscode/
+
+#
+/.venv
+/E-commerce-34sOm8Ye
+/E-commerce-34sOm8Ye
+/.venv/
+# Hello 

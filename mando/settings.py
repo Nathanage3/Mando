@@ -93,7 +93,16 @@ WSGI_APPLICATION = 'mando.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('DB_NAME'),  # Database name from Clever Cloud
+        'USER': os.getenv('DB_USER'),  # Database username from Clever Cloud
+        'PASSWORD': os.getenv('DB_PASSWORD'),  # Database password from Clever Cloud
+        'HOST': os.getenv('DB_HOST'),  # Clever Cloud host
+        'PORT': 3306,  # Port number for MySQL
+    }
+}
 
 # DATABASES = {
 #     'default': {
