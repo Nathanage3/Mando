@@ -1,0 +1,8 @@
+{% load i18n %}
+<p>{% trans "You're receiving this email because you need to activate your account." %}</p>
+<p>{% trans "Please click the link below to activate your account:" %}</p>
+<p>
+    <a href="{{ frontend_url }}/activate/{{ uid }}/{{ token }}">
+        {{ frontend_url }}/activate/{{ uid }}/{{ token }}
+    </a>
+</p>
