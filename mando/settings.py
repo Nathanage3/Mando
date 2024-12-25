@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'core.apps.CoreConfig',
     'courses.apps.CoursesConfig',
     'notifications.apps.NotificationsConfig',
-    'storages',
+    
 ]
 
 MIDDLEWARE = [
@@ -158,6 +158,12 @@ USE_TZ = True
 
 # #MEDIA_URL = '/media/'
 # MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
+AWS_S3_CORS_HEADERS = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+}
 
 
 # Static and Media Files using S3
