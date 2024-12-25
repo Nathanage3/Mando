@@ -17,6 +17,7 @@ djangorestframework-simplejwt==5.3.1
 djoser==2.3.1
 drf-nested-routers==0.94.1
 git-filter-repo==2.47.0
+gunicorn
 idna==3.10
 imageio==2.35.1
 imageio-ffmpeg==0.5.1
