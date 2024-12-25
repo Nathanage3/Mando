@@ -46,7 +46,8 @@ INSTALLED_APPS = [
     'djoser',
     'core.apps.CoreConfig',
     'courses.apps.CoursesConfig',
-    'notifications.apps.NotificationsConfig'
+    'notifications.apps.NotificationsConfig',
+    'storages',
 ]
 
 MIDDLEWARE = [
