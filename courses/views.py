@@ -24,8 +24,13 @@ from .permissions import IsAdminOrReadOnly, ViewCustomerHistoryPermission, IsIns
     IsStudentOrInstructor, IsInstructorOwner, IsInstructorOrReadOnly, IsStudentOrAdmin, IsInstructorOrAdmin, IsStudentAndPurchasedCourse, IsPreviousSectionCompleted
 from .pagination import DefaultPagination
 from uuid import uuid4
-import logging
+
+import boto3
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import JsonResponse
 import os
+
+import logging
 import io
 
 
@@ -1000,59 +1005,71 @@ class SetEmailView(APIView):
         logger.info(f"Request data: {request.data}")
         # Your existing logic
 
-# def register_user(request):
-#     if request.method == 'POST':
-#         # Create a new user
-#         user = User.objects.create_user(
-#             email=request.POST['email'],
-#             password=request.POST['password']
-#         )
-        
-#         # Generate a token
-#         token = generate_token_for_user(user)
-
-#         # Send activation email
-#         send_activation_email(user, token)
-
-#         return JsonResponse({'message': 'User registered. Activation email sent.'})
-
 
 def home(request):
     return HttpResponse("Welcome to the home page!")
 
 
-# import boto3
-# from botocore.exceptions import NoCredentialsError
-# from django.http import JsonResponse
-# import os
 
-# # Initialize the S3 client using AWS credentials
-# s3_client = boto3.client('s3', 
-#     aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),  # Get credentials from environment variables or settings
-#     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-#     region_name='eu-north-1'  # Replace with your specific AWS region, e.g., 'eu-north-1'
-# )
 
-# # Your S3 bucket name
-# BUCKET_NAME = 'mando-ecommerce'
+# Initialize the S3 client using environment variables from settings
+s3_client = boto3.client(
+    's3',
+    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+    region_name=os.getenv('AWS_S3_REGION_NAME')  # Use the same region as in settings.py
+)
 
-# def generate_presigned_url(request):
-#     try:
-#         # Get file name and type from the request parameters
-#         file_name = request.GET.get('file_name')
-#         file_type = request.GET.get('file_type')
+# Define the S3 bucket name (ensure this matches the name in settings.py)
+BUCKET_NAME = 'mando-ecommerce'
 
-#         if not file_name or not file_type:
-#             return JsonResponse({'error': 'Missing file_name or file_type parameters'}, status=400)
+def user_is_authorized_for_course(user, course_id):
+    try:
+        return OrderItem.objects.filter(
+            customer=user.customer_profile,
+            course_id=course_id,
+            order__payment_status=Order.PAYMENT_STATUS_COMPLETE
+        ).exists()
+    except ObjectDoesNotExist:
+        return False
 
-#         # Generate a presigned URL for uploading the file to S3
-#         presigned_url = s3_client.generate_presigned_url('put_object',
-#             Params={'Bucket': BUCKET_NAME, 'Key': file_name, 'ContentType': file_type},
-#             ExpiresIn=3600)  # The URL will expire in 1 hour
 
-#         return JsonResponse({'url': presigned_url})
-    
-#     except NoCredentialsError:
-#         return JsonResponse({'error': 'AWS credentials not available'}, status=400)
-#     except Exception as e:
-#         return JsonResponse({'error': str(e)}, status=500)
+def generate_presigned_url_for_profile(request):
+    """
+    Generate a presigned URL for uploading a user's profile image.
+    """
+    user_id = request.user.id
+    file_name = f"user-profiles/{user_id}/profile.jpg"
+    file_type = request.GET.get('file_type', 'image/jpeg')  # Default file type is JPEG
+
+    try:
+        presigned_url = s3_client.generate_presigned_url(
+            'put_object',
+            Params={
+                'Bucket': BUCKET_NAME,
+                'Key': file_name,
+                'ContentType': file_type,
+                'ACL': 'public-read'  # Make the uploaded file publicly accessible if needed
+            },
+            ExpiresIn=3600  # URL is valid for 1 hour
+        )
+        return JsonResponse({'url': presigned_url})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def generate_presigned_url_for_video(request, course_id, lesson_id):
+    # Check if the user is authorized to access the course
+    if not user_is_authorized_for_course(request.user, course_id):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    file_name = f"courses/{course_id}/lesson_{lesson_id}.mp4"
+    try:
+        presigned_url = s3_client.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': BUCKET_NAME, 'Key': file_name},
+            ExpiresIn=3600  # URL valid for 1 hour
+        )
+        return JsonResponse({'url': presigned_url})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

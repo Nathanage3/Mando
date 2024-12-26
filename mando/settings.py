@@ -161,20 +161,15 @@ USE_TZ = True
 # MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
-AWS_S3_CORS_HEADERS = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-}
+import os
+import logging
 
-
-# Static and Media Files using S3
-AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')  # Your AWS Access Key
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')  # Your AWS Secret Key
+# AWS S3 Configuration
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')  # AWS Access Key
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')  # AWS Secret Key
 AWS_STORAGE_BUCKET_NAME = 'mando-ecommerce'  # Your S3 Bucket Name
-AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL')  # Your S3 Region Endpoint
-
-AWS_QUERYSTRING_AUTH = False
-AWS_S3_REGION_NAME = 'eu-north-1'
+AWS_S3_REGION_NAME = 'eu-north-1'  # Your AWS Region
+AWS_S3_ENDPOINT_URL = f'https://{AWS_S3_REGION_NAME}.amazonaws.com'  # Adjust if necessary
 
 # Static Files
 STATIC_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/static/'
@@ -184,18 +179,30 @@ STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 MEDIA_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/media/'
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
+# CORS Configuration
+AWS_S3_CORS_HEADERS = {
+    'Access-Control-Allow-Origin': 'http://localhost:5173, https://mando.koyeb.app, https://mandotest.netlify.app, http://127.0.0.1:8000, http://localhost:8000',
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type, x-amz-acl',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT',
+    'Access-Control-Allow-Credentials': 'true',
+}
 
+# Disable Query String Authentication for Public Access
+AWS_QUERYSTRING_AUTH = False
+
+# Logging Configuration for AWS SDK
 logging.getLogger('botocore').setLevel(logging.WARNING)
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
-
+# Default Primary Key Field Type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Authentication Backends
 AUTHENTICATION_BACKENDS = [
-    'core.backends.EmailBackend',  # Replace 'your_app' with the actual app name
+    'core.backends.EmailBackend',  # Replace 'core' with your actual app name
     'django.contrib.auth.backends.ModelBackend',
 ]
+
+
 
 AUTH_USER_MODEL = 'core.User'
 
