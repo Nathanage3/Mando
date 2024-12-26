@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'core.apps.CoreConfig',
     'courses.apps.CoursesConfig',
     'notifications.apps.NotificationsConfig',
+    'storages',
     
 ]
 
@@ -173,7 +174,7 @@ AWS_STORAGE_BUCKET_NAME = 'mando-ecommerce'  # Your S3 Bucket Name
 AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL')  # Your S3 Region Endpoint
 
 AWS_QUERYSTRING_AUTH = False
-AWS_S3_REGION_NAME = 'us-east-1'
+AWS_S3_REGION_NAME = 'eu-north-1'
 
 # Static Files
 STATIC_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/static/'

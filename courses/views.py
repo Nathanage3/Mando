@@ -1020,3 +1020,39 @@ class SetEmailView(APIView):
 def home(request):
     return HttpResponse("Welcome to the home page!")
 
+
+# import boto3
+# from botocore.exceptions import NoCredentialsError
+# from django.http import JsonResponse
+# import os
+
+# # Initialize the S3 client using AWS credentials
+# s3_client = boto3.client('s3', 
+#     aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),  # Get credentials from environment variables or settings
+#     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+#     region_name='eu-north-1'  # Replace with your specific AWS region, e.g., 'eu-north-1'
+# )
+
+# # Your S3 bucket name
+# BUCKET_NAME = 'mando-ecommerce'
+
+# def generate_presigned_url(request):
+#     try:
+#         # Get file name and type from the request parameters
+#         file_name = request.GET.get('file_name')
+#         file_type = request.GET.get('file_type')
+
+#         if not file_name or not file_type:
+#             return JsonResponse({'error': 'Missing file_name or file_type parameters'}, status=400)
+
+#         # Generate a presigned URL for uploading the file to S3
+#         presigned_url = s3_client.generate_presigned_url('put_object',
+#             Params={'Bucket': BUCKET_NAME, 'Key': file_name, 'ContentType': file_type},
+#             ExpiresIn=3600)  # The URL will expire in 1 hour
+
+#         return JsonResponse({'url': presigned_url})
+    
+#     except NoCredentialsError:
+#         return JsonResponse({'error': 'AWS credentials not available'}, status=400)
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
