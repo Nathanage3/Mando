@@ -57,7 +57,8 @@ urlpatterns = [
     path('', include(section_router.urls)),
     path('', include(purchased_course_router.urls)),
     path('', include(purchased_section_router.urls)),
-    #path('generate-url/', views.generate_presigned_url, name='generate_presigned_url'),
+    path('get-upload-url/', views.get_upload_url, name='get_upload_url'),
+    path('get-image-url/<str:file_name>/', views.get_image_url, name='get_image_url'),
     path('instructors/<int:instructor_pk>/earnings/', views.InstructorEarningsViewSet.as_view({'get': 'list'})),
     path('courses/<int:course_pk>/sections/<int:section_pk>/questions/<int:pk>/answer/', views.QuestionViewSet.as_view({'post': 'question_answer'}), name='question-answer'),
 ]

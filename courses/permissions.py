@@ -5,7 +5,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 class IsAdminOrReadOnly(permissions.BasePermission):
   """
     Custom permission to only allow admins to edit or delete, while others can only read.

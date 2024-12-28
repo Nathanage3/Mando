@@ -32,12 +32,8 @@ from django.http import JsonResponse
 import os
 from django.http import HttpResponse
 import requests
-import logging
 import io
 
-
-
-logger = logging.getLogger(__name__)
 
 class CustomerViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all()
@@ -191,27 +187,19 @@ class SectionViewSet(viewsets.ModelViewSet):
         course_id = self.kwargs['course_pk']
         user = self.request.user
 
-        logger.debug(f"User {user.id} is requesting sections for course {course_id}")
-
         # Check if the user is an instructor for the course
         if Course.objects.filter(id=course_id, instructor=user).exists():
-            logger.debug(f"User {user.id} is the instructor for course {course_id} (Instructor Check)")
             return Section.objects.filter(course_id=course_id)
 
         # Check if the user is a student who purchased the course
         if self.request.method in SAFE_METHODS:
-            logger.debug(f"Checking purchase for course_id: {course_id}, user: {user.id}")
             if OrderItem.objects.filter(
                 course_id=course_id,
                 order__customer=user.customer_profile,
                 order__payment_status='C'
             ).exists():
-                logger.debug(f"User {user.id} has purchased course {course_id} (Student Check)")
                 return Section.objects.filter(course_id=course_id)
-            logger.warning(f"User {user.id} does not have permission to access purchased sections of course {course_id}")
             raise PermissionDenied("You do not have permission to access this course's sections.")
-
-        logger.warning(f"User {user.id} does not have permission to access course {course_id} (No Match)")
         raise PermissionDenied("You do not have permission to access this course's sections.")
     
   
@@ -324,7 +312,6 @@ class LessonViewSet(BaseLessonViewSet):
             course_id=course_id,
             order__payment_status='C'
         ).exists()
-        logger.debug(f"[Permission Check] Purchase status for user {user.id} and course_id {course_id}: {has_purchased}")
         return has_purchased
 
     @action(detail=True, methods=['get', 'put'], url_path='mark_as_finished')
@@ -334,7 +321,6 @@ class LessonViewSet(BaseLessonViewSet):
 
         # Debug: Check purchase status
         if not self.is_student_with_purchase(request.user, course_id):
-            logger.debug(f"[Forbidden] User {request.user.id} does not have access to course_id {course_id}")
             return Response({'detail': 'You do not have permission to perform this action.'}, status=403)
 
         # Mark lesson as finished
@@ -350,7 +336,6 @@ class LessonViewSet(BaseLessonViewSet):
 
         # Debug: Check purchase status
         if not self.is_student_with_purchase(request.user, course_id):
-            logger.debug(f"[Forbidden] User {request.user.id} does not have access to course_id {course_id}")
             return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_403_FORBIDDEN)
 
         # Mark lesson as unfinished
@@ -359,8 +344,6 @@ class LessonViewSet(BaseLessonViewSet):
         self.update_course_progress(request, lesson)
         return Response(LessonSerializer(lesson, context={'request': request}).data)
 
-
-logger = logging.getLogger(__name__)
 
 class QuestionViewSet(viewsets.ModelViewSet):
     serializer_class = QuestionSerializer
@@ -433,7 +416,6 @@ class QuestionViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='retake')
     def retake_exam(self, request, course_pk=None, section_pk=None):
-         logger.debug("Retake exam triggered for section ID: %s", section_pk)
          section = get_object_or_404(Section, pk=section_pk)
          student = request.user
 
@@ -441,9 +423,7 @@ class QuestionViewSet(viewsets.ModelViewSet):
              student_scores = StudentScore.objects.filter(student=student, section=section)
              for student_score in student_scores:
                  student_score.reset_score()
-             logger.debug("Scores reset for student ID: %s, section ID: %s", student.id, section.id)
          except StudentScore.DoesNotExist:
-             logger.warning("StudentScores not found for student ID: %s, section ID: %s", student.id, section.id)
              return Response({'error': 'No scores exist to reset for this section'}, status=status.HTTP_404_NOT_FOUND)
 
          # Redirect to the list of questions for the section
@@ -488,7 +468,6 @@ class CourseProgressViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         queryset = CourseProgress.objects.prefetch_related('student').select_related('course')
         if self.request.user.is_staff:
-            logger.info(f"Admin user accessing CourseProgress")
             return queryset.all()
 
         # Get the customer instance linked to the current user
@@ -499,13 +478,10 @@ class CourseProgressViewSet(viewsets.ReadOnlyModelViewSet):
             order__customer=customer,
             order__payment_status='C'
         ).values_list('course_id', flat=True)
-
-        logger.info(f"Purchased courses: {purchased_courses}")
         
         #filtered_queryset = queryset.filter(student=self.request.user, course_id__in=purchased_courses)
         filtered_queryset = queryset.filter(course_id__in=purchased_courses).filter(student_id=self.request.user.id)
 
-        logger.info(f"Filtered CourseProgress: {filtered_queryset}")
         return filtered_queryset
 
 
@@ -552,7 +528,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         try:
             return request.user.customer_profile.cart
         except Customer.DoesNotExist:
-            logger.error('Customer profile not found')
+
             return Response({'detail': 'Customer profile not found'}, status=status.HTTP_400_BAD_REQUEST)
         except Cart.DoesNotExist:
             return Response({'detail': 'Your cart is empty'}, status=status.HTTP_400_BAD_REQUEST)
@@ -567,7 +543,6 @@ class OrderViewSet(viewsets.ModelViewSet):
             return cart  # Return the error response from get_cart
 
         if not cart.items.exists():
-            logger.error('Cart is empty')
             return Response({'detail': 'Cart is empty'}, status=status.HTTP_400_BAD_REQUEST)
         
         purchased_courses = OrderItem.objects.filter(order__customer=customer).values_list('course_id', flat=True)
@@ -575,12 +550,9 @@ class OrderViewSet(viewsets.ModelViewSet):
         duplicate_courses = set(cart_courses).intersection(set(purchased_courses))
         
         if duplicate_courses:
-            logger.info(f"Customer {customer.id} has already purchased course: {duplicate_courses}")
             return Response({'detail': f"You have already purchased course: {list(duplicate_courses)}"}, status=status.HTTP_400_BAD_REQUEST)
 
-        logger.info(f"Creating order for customer: {customer.id}")
         order = Order.objects.create(customer=customer, payment_status='C')
-        logger.info(f"Order created: {order.id}")
 
         for item in cart.items.all():
             order_item = OrderItem.objects.create(
@@ -590,17 +562,10 @@ class OrderViewSet(viewsets.ModelViewSet):
                 customer=customer,
                 instructor=item.course.instructor
             )
-            logger.info(f"OrderItem created: {order_item.id} for course: {item.course.id}")
-
+        
             progress, created = CourseProgress.objects.get_or_create(student=request.user, course=item.course)
-            if created:
-                logger.info(f"CourseProgress created: {progress}")
-            else:
-                logger.info(f"CourseProgress already exists for student: {request.user}, course: {item.course}")
-            
+        
             item.course.update_student_count()
-            logger.info(f"Updated number of students for course: {item.course.id}")
-
         cart.items.all().delete()
         cart.delete()
 
@@ -619,42 +584,33 @@ class CartViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         customer = self.request.user.customer_profile
-        logger.debug(f"Fetching cart for customer: {customer.id}")
         return Cart.objects.filter(customer=customer)
 
     def get_cart(self, request):
         """Get or Create cart associated with the current user"""
         customer = request.user.customer_profile
         cart, created = Cart.objects.get_or_create(customer=customer)
-        logger.debug(f"{'Created' if created else 'Fetched'} cart for customer: {customer.id}")
         return cart
 
     @action(detail=False, methods=['post'], url_path='add-item')
     def add_item(self, request):
-        logger.debug(f"Received add-item request with method: {request.method}")
         cart = self.get_cart(request)
         course_id = request.data.get('course_id')
         if not course_id:
-            logger.error("course_id is required")
             return Response({'detail': 'course_id is required'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             course = Course.objects.get(id=course_id)
-            logger.debug(f"Course found: {course.id}")
         except Course.DoesNotExist:
-            logger.error(f"Invalid course_id: {course_id}")
             return Response({'detail': 'Invalid course_id'}, status=status.HTTP_404_NOT_FOUND)
         if CartItem.objects.filter(cart=cart, course=course).exists():
-            logger.warning(f"Item already in the cart: {course.id}")
             return Response({'detail': 'Item already in the cart'}, status=status.HTTP_400_BAD_REQUEST)
         CartItem.objects.create(cart=cart, course=course)
-        logger.info(f"Added course {course.id} to cart for customer {cart.customer.id}")
         return Response(CartSerializer(cart, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
     def perform_create(self, serializer):
         customer = self.request.user.customer_profile
         existing_cart = Cart.objects.filter(customer=customer).first()
         if existing_cart:
-            logger.error("Cart already exists for this customer.")
             raise serializers.ValidationError({"detail": "Cart already exists for this customer."})
         serializer.save(customer=customer)
 
@@ -678,12 +634,10 @@ class CartItemViewSet(viewsets.ModelViewSet):
         """Get the cart associated with the current user"""
         customer = request.user.customer_profile
         cart, created = Cart.objects.get_or_create(customer=customer)
-        logger.debug(f"{'Created' if created else 'Fetched'} cart for customer: {customer.id}")
         return cart
     
     def get_queryset(self):
         cart = self.get_cart(self.request)
-        logger.debug(f"Fetching cart items for cart: {cart.id}")
         return CartItem.objects.filter(cart=cart)
     
     def create(self, request, *args, **kwargs):
@@ -691,34 +645,26 @@ class CartItemViewSet(viewsets.ModelViewSet):
         course_id = request.data.get('course_id')
         
         if not course_id:
-            logger.error("course_id is required")
             return Response({'detail': 'course_id is required'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             course = Course.objects.get(id=course_id)
-            logger.debug(f"Course found: {course.id}")
         except Course.DoesNotExist:
-            logger.error(f"Invalid course_id: {course_id}")
             return Response({'detail': 'Invalid course_id'}, status=status.HTTP_404_NOT_FOUND)
         
         cart_item, created = CartItem.objects.get_or_create(cart=cart, course=course)
         if not created:
-            logger.warning(f"Item already in the cart: {course.id}")
             return Response({'detail': 'Item Already in cart'}, status=status.HTTP_200_OK)
-        
-        logger.info(f"Added course {course.id} to cart item: {cart_item.id}")
         return Response(CartItemSerializer(cart_item).data, status=status.HTTP_201_CREATED)
     
     def destroy(self, request, pk=None):
         cart_item = self.get_object()
-        logger.info(f"Removing item {cart_item.id} from cart")
         cart_item.delete()
         return Response({'detail': 'Item removed from the cart'}, status=status.HTTP_204_NO_CONTENT)
 
     def list(self, request, cart_pk=None):
         cart = self.get_cart(request)
         cart_items = cart.items.all()
-        logger.debug(f"Listing items for cart: {cart.id}")
         serializer = CartItemSerializer(cart_items, many=True)
         return Response(serializer.data)
     
@@ -727,12 +673,10 @@ class CartItemViewSet(viewsets.ModelViewSet):
         """Custom endpoint to remove a specific item from the cart"""
         try:
             cart_item = CartItem.objects.get(pk=pk, cart=self.get_cart(request))
-            logger.info(f"Removing item {cart_item.id} from cart for custom remove endpoint")
             cart_item.delete()
             return Response({'detail': 'Item removed from the cart'}, status=status.HTTP_204_NO_CONTENT)
 
         except CartItem.DoesNotExist:
-            logger.error(f"Cart item id {pk} not found in cart")
             return Response({'detail': 'Item not found in cart'}, status=status.HTTP_404_NOT_FOUND)
 
 
@@ -760,20 +704,16 @@ class RatingViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         course_id = self.kwargs['course_pk']
-        logger.debug(f"Fetching ratings for course {course_id}")
         return Rating.objects.filter(course_id=course_id, user=user)
 
     def create(self, request, course_pk=None):
         course = get_object_or_404(Course, pk=course_pk)
-        logger.debug(f"Creating rating for course {course_pk}")
 
         purchased = OrderItem.objects.filter(order__customer=request.user.customer_profile, course=course, order__payment_status='C').exists()
         if not purchased:
-            logger.debug(f"User {request.user.id} has not purchased course {course_pk}")
             return Response({'detail': 'You can only rate courses you have purchased.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if Rating.objects.filter(user=request.user, course=course).exists():
-            logger.debug(f"User {request.user.id} has already rated course {course_pk}")
             return Response({'detail': 'You have already rated this course.'}, status=status.HTTP_400_BAD_REQUEST)
 
         data = request.data.copy()
@@ -783,31 +723,24 @@ class RatingViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=data)
         if serializer.is_valid():
             rating = serializer.save()
-            logger.debug(f"Rating created for course {course_pk} by user {request.user.id}")
             course.update_rating_metrics()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        logger.debug(f"Failed to create rating for course {course_pk}: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, course_pk=None, pk=None):
         course = get_object_or_404(Course, pk=course_pk)
         rating = get_object_or_404(self.get_queryset(), pk=pk, user=request.user)
 
-        logger.debug(f"Updating rating {pk} for course {course_pk}")
         serializer = self.get_serializer(rating, data=request.data, partial=True)
         if serializer.is_valid():
             rating = serializer.save()
-            logger.debug(f"Rating {pk} updated for course {course_pk}")
             course.update_rating_metrics()
             return Response(serializer.data)
-        logger.debug(f"Failed to update rating {pk} for course {course_pk}: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, course_pk=None, pk=None):
         course = get_object_or_404(Course, pk=course_pk)
         rating = get_object_or_404(self.get_queryset(), pk=pk, user=request.user)
-
-        logger.debug(f"Deleting rating {pk} for course {course_pk}")
         rating.delete()
         course.update_rating_metrics()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -893,16 +826,76 @@ class PaymentStatusViewSet(viewsets.ModelViewSet):
     permission_class = [IsAdminUser]
 
 from rest_framework.views import APIView
-logger = logging.getLogger(__name__)
 
 class SetEmailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        logger.info(f"Request headers: {request.headers}")
-        logger.info(f"Request data: {request.data}")
+        print(f"Request headers: {request.headers}")
+        print(f"Request data: {request.data}")
         # Your existing logic
-
 
 def home(request):
     return HttpResponse("Welcome to the home page!")
+
+
+# import boto3
+
+# # Initialize the S3 client
+# s3_client = boto3.client('s3')
+
+# # Generate a pre-signed URL
+# bucket_name = 'mando-ecommerce'
+# key = 'profile_pictures/*'
+
+# pre_signed_url = s3_client.generate_presigned_url(
+#     'get_object',
+#     Params={'Bucket': bucket_name, 'Key': key},
+#     ExpiresIn=3600  # URL expiration time in seconds
+# )
+# print('Hello >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+# print(pre_signed_url)
+
+from django.http import JsonResponse
+from django.conf import settings
+from .utils.s3_utils import generate_presigned_url
+
+
+def get_upload_url(request):
+    if request.method == 'POST':
+        file_name = request.POST.get('file_name')  # Get file name from POST data
+        if not file_name:
+            return JsonResponse({'error': 'File name is required'}, status=400)
+        
+        file_path = f"profile_pictures/{file_name}"  # Define where the file should be stored in the bucket
+
+        # Generate a pre-signed URL for 'put_object' operation
+        upload_url = generate_presigned_url(
+            bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+            object_name=file_path,
+            expiration=3600,  # URL valid for 1 hour
+            operation='put_object'
+        )
+        
+        if upload_url:
+            return JsonResponse({'upload_url': upload_url})
+        else:
+            return JsonResponse({'error': 'Unable to generate pre-signed upload URL'}, status=500)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+def get_image_url(request, file_name):
+    file_path = f"profile_pictures/{file_name}"  # Path to the image in S3
+
+    # Generate a pre-signed URL for 'get_object' operation
+    download_url = generate_presigned_url(
+        bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+        object_name=file_path,
+        expiration=3600  # URL valid for 1 hour
+    )
+
+    if download_url:
+        return JsonResponse({'url': download_url})
+    else:
+        return JsonResponse({'error': 'Unable to generate pre-signed download URL'}, status=500)

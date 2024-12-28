@@ -13,10 +13,7 @@ from uuid import uuid4
 from moviepy.editor import VideoFileClip
 import io
 
-import logging
 
-
-logger = logging.getLogger(__name__)
 
 class Collection(models.Model):
     title = models.CharField(max_length=255)
@@ -108,19 +105,16 @@ class Course(models.Model):
     
     def get_rating_count(self):
         ratingCount = self.course_ratings.count()
-        logger.debug(f"Rating count for course {self.id}: {ratingCount}")
         return ratingCount
     
     def get_average_rating(self):
         average = self.course_ratings.aggregate(Avg('score'))['score__avg']
         average_rating = round(average, 2) if average else 0.0
-        logger.debug(f"Average rating for course {self.id}: {average_rating}")
         return average_rating
     
     def update_rating_metrics(self): 
         self.rating_count = self.get_rating_count()
         self.average_rating = self.get_average_rating()
-        logger.debug(f"Updated rating metrics for course {self.id}: rating_count = {self.rating_count}, average_rating = {self.average_rating}")
         self.save(update_fields=['rating_count', 'average_rating'])
 
     def duration_in_hours(self):
@@ -147,14 +141,10 @@ class Course(models.Model):
         self.total_duration = total_duration
         self.save(update_fields=["total_duration"])
 
-    
-
     # def validate_file_size(value):
     #     max_size = 2 * 1024 * 1024  # 2 MB
     #     if value.size > max_size:
     #         raise ValidationError(f"File size cannot exceed {max_size / (1024 * 1024)} MB.")
-
-
 
 class Rating(models.Model): 
     score = models.FloatField(validators=[MinValueValidator(1.0),
