@@ -6,7 +6,6 @@ import logging
 
 APPEND_SLASH=True
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
 
@@ -87,7 +86,6 @@ TEMPLATES = [
     },
 ]
 
-print(os.path.join(BASE_DIR, 'templates'))
 
 
 WSGI_APPLICATION = 'mando.wsgi.application'
@@ -106,19 +104,6 @@ DATABASES = {
     }
 }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'mando_db',
-#         'USER': 'root',
-#         'PASSWORD': 'Password',
-#         'HOST': 'localhost',
-#         'PORT': 3306,
-#         'OPTIONS': {
-#             'ssl': {'disabled': True},
-#             },
-#         }
-# }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -160,38 +145,39 @@ USE_TZ = True
 # #MEDIA_URL = '/media/'
 # MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-
 import os
 import logging
 
 # AWS S3 Configuration
-AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')  # AWS Access Key
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')  # AWS Secret Key
-AWS_STORAGE_BUCKET_NAME = 'mando-ecommerce'  # Your S3 Bucket Name
-AWS_S3_REGION_NAME = 'eu-north-1'  # Your AWS Region
-AWS_S3_ENDPOINT_URL = f'https://{AWS_S3_REGION_NAME}.amazonaws.com'  # Adjust if necessary
-
-# Static Files
-STATIC_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/static/'
-STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-
-# Media Files
-MEDIA_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/media/'
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID'),  # AWS Access Key
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY'), # AWS Secret Key
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME'), # Your S3 Bucket Name
+AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME'),  # Your AWS Region
+AWS_DEFAULT_ACL = None
+AWS_S3_SIGNATURE_NAME = 's3v4'
+AWS_S3_FILE_OVERWRITE = False
+AWS_S3_VERITY = True
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
-# CORS Configuration
-AWS_S3_CORS_HEADERS = {
-    'Access-Control-Allow-Origin': 'http://localhost:5173, https://mando.koyeb.app, https://mandotest.netlify.app, http://127.0.0.1:8000, http://localhost:8000',
-    'Access-Control-Allow-Headers': 'Authorization, Content-Type, x-amz-acl',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT',
-    'Access-Control-Allow-Credentials': 'true',
-}
+AWS_S3_ENDPOINT_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
 
-# Disable Query String Authentication for Public Access
-AWS_QUERYSTRING_AUTH = False
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATIC_URL = f"https://{AWS_S3_ENDPOINT_URL}/static/"
+
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Logging Configuration for AWS SDK
 logging.getLogger('botocore').setLevel(logging.WARNING)
+
 
 # Default Primary Key Field Type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
