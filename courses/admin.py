@@ -27,7 +27,7 @@ class CourseAdmin(admin.ModelAdmin):
     readonly_fields = ('last_update',)
     fieldsets = (
         (None, {
-            'fields': ('title', 'slug', 'description', 'objectives', 'sections', 
+            'fields': ('title', 'slug', 'description', 'objectives', 
                        'total_duration', 'image', 'preview', 'courseFor', 'price', 'oldPrice', 
                         'currency', 'rating_count', 'syllabus', 'prerequisites', 'is_active', 
                        'level', 'collection', 'promotions')
@@ -76,7 +76,7 @@ class CollectionAdmin(admin.ModelAdmin):
 
 @admin.register(models.Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ('user', 'first_name', 'last_name')
+    list_display = ('user', 'first_name', 'last_name', 'orders_count')
     search_fields = ('user__username', 'user__first_name', 'user__last_name')
     ordering = ('user__first_name', 'user__last_name')
 
@@ -84,6 +84,12 @@ class CustomerAdmin(admin.ModelAdmin):
         return super().get_queryset(request).annotate(
             orders_count=Count('order')
         )
+    
+    def orders_count(self, obj):
+        # Return the orders count for the customer
+        return obj.orders_count
+    orders_count.admin_order_field = 'orders_count'  # Enable ordering by this field
+    orders_count.short_description = 'Orders Count'
 
 ############### CustomerAdmin End ##############
 

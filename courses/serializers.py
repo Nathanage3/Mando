@@ -246,8 +246,15 @@ class CustomerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Customer
-        #fields = ['id', 'user_id', 'bio', 'website', 'profile_picture']
-        exclude = ['id', 'user']
+        fields = ['bio', 'website', 'profile_picture']
+        #exclude = ['id', 'user']
+
+        def update(self, instance, validated_data):
+            instance.bio = validated_data.get('bio', instance.bio)
+            instance.profile_picture = validated_data.get('profile_picture', instance.profile_picture)
+            instance.website = validated_data.get('website', instance.website)
+            instance.save()
+            return instance
 
 
 class InstructorEarningsSerializer(serializers.ModelSerializer):

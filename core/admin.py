@@ -17,8 +17,8 @@ class UserAdmin(BaseUserAdmin):
   )
 
 
-class CustomCourseAdmin(CourseAdmin):
-  pass
+# class CustomCourseAdmin(CourseAdmin):
+#   pass
   
-admin.site.unregister(Course)
-admin.site.register(Course, CustomCourseAdmin)
+# admin.site.unregister(Course)
+# admin.site.register(Course, CustomCourseAdmin)

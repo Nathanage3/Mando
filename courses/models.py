@@ -147,6 +147,14 @@ class Course(models.Model):
         self.total_duration = total_duration
         self.save(update_fields=["total_duration"])
 
+    
+
+    # def validate_file_size(value):
+    #     max_size = 2 * 1024 * 1024  # 2 MB
+    #     if value.size > max_size:
+    #         raise ValidationError(f"File size cannot exceed {max_size / (1024 * 1024)} MB.")
+
+
 
 class Rating(models.Model): 
     score = models.FloatField(validators=[MinValueValidator(1.0),

@@ -10,10 +10,13 @@ media/
 venv/
 # Ignore VSCode workspace settings
 .vscode/
-
+/static/
+/staticfiles/
+/staticfiles/admin
 #
 /.venv
 /E-commerce-34sOm8Ye
 /E-commerce-34sOm8Ye
 /.venv/
+cookies.txt
 # Hello 
