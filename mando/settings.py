@@ -173,20 +173,29 @@ import os
 import logging
 
 # AWS S3 Configuration
-AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID') # AWS Access Key
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY') # AWS Secret Key
-AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME') # Your S3 Bucket Name
-AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')  # Your AWS Region
-AWS_DEFAULT_ACL = None
-AWS_S3_SIGNATURE_NAME = 's3v4'
-AWS_S3_FILE_OVERWRITE = False
-AWS_S3_VERIFY = True
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')  # AWS Access Key
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')  # AWS Secret Key
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')  # Your S3 Bucket Name
+AWS_S3_REGION_NAME = "eu-north-1"  # Your AWS Region
+AWS_DEFAULT_ACL = None  # Do not set ACL by default (recommended for private buckets)
+AWS_S3_SIGNATURE_VERSION = 's3v4'  # Correct name for the signature version
+AWS_S3_FILE_OVERWRITE = False  # Do not overwrite files with the same name
+AWS_S3_VERIFY = True  # Verify SSL certificates
+
+# Endpoint URL is only needed if you're using a custom endpoint (e.g., for local S3-compatible storage)
+# Remove it for standard AWS S3 configuration
+# AWS_S3_ENDPOINT_URL = 'https://s3.eu-north-1.amazonaws.com'
+
+# Default file storage for media files
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
-AWS_S3_ENDPOINT_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
-
+# Static file storage (if using S3 for static files as well)
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-STATIC_URL = f"https://{AWS_S3_ENDPOINT_URL}/static/"
+
+# Static URL
+# STATIC_URL does not require AWS_S3_ENDPOINT_URL. Use your bucket and region instead.
+STATIC_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/static/"
+
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
