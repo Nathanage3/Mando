@@ -4,7 +4,7 @@ from django.db.models.aggregates import Count
 from django.conf import settings
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from rest_framework import viewsets, status, serializers
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
@@ -27,9 +27,11 @@ from uuid import uuid4
 
 import boto3
 from django.core.exceptions import ObjectDoesNotExist
+from botocore.exceptions import NoCredentialsError
 from django.http import JsonResponse
 import os
-
+from django.http import HttpResponse
+import requests
 import logging
 import io
 
@@ -59,27 +61,26 @@ class CustomerViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data)
         
+    
     @action(detail=False, methods=['PUT'], permission_classes=[IsAuthenticated])
     def update_profile_picture(self, request):
         try:
+            # Fetch the customer linked to the authenticated user
             customer = Customer.objects.get(user=request.user)
-            user = request.user
-            if 'profile_picture' in request.FILES:
-                profile_picture = request.FILES['profile_picture']
-            
-                # Update profile picture for Customer
-                customer.profile_picture = profile_picture
-                customer.save()
-            
-                # Update profile picture for User
-                user.profile_picture = profile_picture
-                user.save()
-            
-                return Response({'status': 'Profile picture updated'}, status=200)
-            return Response({'error': 'No profile picture uploaded'}, status=400)
+        
+            # Check if 'profile_picture' is in the uploaded files
+            profile_picture = request.FILES.get('profile_picture')
+            if not profile_picture:
+                return Response({'error': 'No profile picture uploaded'}, status=400)
+        
+            # Update the profile picture for the Customer
+            customer.profile_picture = profile_picture
+            customer.save()
+
+            return Response({'status': 'Profile picture updated successfully'}, status=200)
+    
         except Customer.DoesNotExist:
             return Response({'error': 'Customer not found'}, status=404)
-
 
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.select_related('instructor', 'collection').all().order_by('id')
@@ -358,109 +359,6 @@ class LessonViewSet(BaseLessonViewSet):
         self.update_course_progress(request, lesson)
         return Response(LessonSerializer(lesson, context={'request': request}).data)
 
-# from django.urls import reverse
-# from django.http import HttpResponseRedirect
-
-# class QuestionViewSet(viewsets.ModelViewSet):
-#     serializer_class = QuestionSerializer
-
-#     def get_permissions(self):
-#         if self.action in ['list', 'retrieve']:
-#             self.permission_classes = [IsAuthenticated, IsStudentAndPurchasedCourse | IsInstructorOwner]
-#         elif self.action in ['create', 'update', 'destroy']:
-#             self.permission_classes = [IsAuthenticated, IsInstructorOwner]
-#         else:
-#             self.permission_classes = [IsAuthenticated]
-#         return super().get_permissions()
-
-#     def get_queryset(self):
-#          section_id = self.kwargs.get('section_pk')
-#          if not section_id:
-#              raise PermissionDenied("Section ID is missing in the request.")
-
-#          user = self.request.user
-
-#          # Instructor access
-#          if Section.objects.filter(id=section_id, course__instructor=user).exists():
-#              return Question.objects.filter(section_id=section_id)
-
-#          # Student access
-#          if OrderItem.objects.filter(
-#              course_id=Section.objects.get(id=section_id).course_id,
-#              order__customer=user.customer_profile,
-#              order__payment_status='C'
-#             ).exists():
-#              return Question.objects.filter(section_id=section_id)
-
-#          # No access
-#          raise PermissionDenied("You do not have permission to access this section's questions.")
-
-#     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], url_path='answer')
-#     def question_answer(self, request, course_pk=None, section_pk=None, pk=None):
-#          question = self.get_object()
-#          option_id = request.data.get('option_id')
-#          student = request.user
-
-#          if not option_id:
-#              return Response({'error': 'Option ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
-
-#          try:
-#              option = Option.objects.get(id=option_id, question=question)
-#          except Option.DoesNotExist:
-#              return Response({'error': 'Invalid option'}, status=status.HTTP_400_BAD_REQUEST)
-
-#          # Save student answer
-#          student_answer = StudentAnswer.objects.create(
-#              student=student,
-#              question=question,
-#              selected_option=option
-#          )
-
-#          # Update the Student Score
-#          student_score, created = StudentScore.objects.get_or_create(
-#              student=student,
-#              section=question.section
-#          )
-#          student_score.calculate_progress()
-#          passed = student_score.score >= 70.0
-
-#          return Response({
-#              'student_answer': StudentAnswerSerializer(student_answer).data,
-#              'passed': passed,
-#              'score': student_score.score
-#          })
-
-#     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated], url_path='retake')
-#     def retake_exam(self, request, course_pk=None, section_pk=None, pk=None):
-#          logger.debug("Retake exam triggered for question ID: %s", pk)
-#          question = self.get_object()
-#          student = request.user
-#          section = question.section
-
-#          try:
-#              student_score = StudentScore.objects.get(student=student, section=section)
-#              student_score.reset_score()
-#              logger.debug("Score reset for student ID: %s, section ID: %s", student.id, section.id)
-#          except StudentScore.DoesNotExist:
-#              logger.warning("StudentScore not found for student ID: %s, section ID: %s", student.id, section.id)
-#              return Response({'error': 'No score exists to reset for this section'}, status=status.HTTP_404_NOT_FOUND)
-
-#          # Redirect to the list of questions for the section
-#          questions_url = reverse('questions-list', kwargs={'course_pk': course_pk, 'section_pk': section_pk})
-#          return HttpResponseRedirect(questions_url)
-
-
-from django.urls import reverse
-from django.http import HttpResponseRedirect
-from rest_framework import viewsets
-from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
-from django.core.exceptions import PermissionDenied
-from .models import Question, Option, StudentAnswer, StudentScore, Section, OrderItem
-from .serializers import QuestionSerializer, StudentAnswerSerializer
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -1008,68 +906,3 @@ class SetEmailView(APIView):
 
 def home(request):
     return HttpResponse("Welcome to the home page!")
-
-
-
-
-# Initialize the S3 client using environment variables from settings
-s3_client = boto3.client(
-    's3',
-    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-    region_name=os.getenv('AWS_S3_REGION_NAME')  # Use the same region as in settings.py
-)
-
-# Define the S3 bucket name (ensure this matches the name in settings.py)
-BUCKET_NAME = 'mando-ecommerce'
-
-def user_is_authorized_for_course(user, course_id):
-    try:
-        return OrderItem.objects.filter(
-            customer=user.customer_profile,
-            course_id=course_id,
-            order__payment_status=Order.PAYMENT_STATUS_COMPLETE
-        ).exists()
-    except ObjectDoesNotExist:
-        return False
-
-
-def generate_presigned_url_for_profile(request):
-    """
-    Generate a presigned URL for uploading a user's profile image.
-    """
-    user_id = request.user.id
-    file_name = f"user-profiles/{user_id}/profile.jpg"
-    file_type = request.GET.get('file_type', 'image/jpeg')  # Default file type is JPEG
-
-    try:
-        presigned_url = s3_client.generate_presigned_url(
-            'put_object',
-            Params={
-                'Bucket': BUCKET_NAME,
-                'Key': file_name,
-                'ContentType': file_type,
-                'ACL': 'public-read'  # Make the uploaded file publicly accessible if needed
-            },
-            ExpiresIn=3600  # URL is valid for 1 hour
-        )
-        return JsonResponse({'url': presigned_url})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-
-def generate_presigned_url_for_video(request, course_id, lesson_id):
-    # Check if the user is authorized to access the course
-    if not user_is_authorized_for_course(request.user, course_id):
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
-
-    file_name = f"courses/{course_id}/lesson_{lesson_id}.mp4"
-    try:
-        presigned_url = s3_client.generate_presigned_url(
-            'get_object',
-            Params={'Bucket': BUCKET_NAME, 'Key': file_name},
-            ExpiresIn=3600  # URL valid for 1 hour
-        )
-        return JsonResponse({'url': presigned_url})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
