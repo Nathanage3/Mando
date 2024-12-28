@@ -859,7 +859,7 @@ def home(request):
 from django.http import JsonResponse
 from django.conf import settings
 from .utils.s3_utils import generate_presigned_url
-
+from django.views.decorators.csrf import csrf_exempt
 
 def get_upload_url(request):
     if request.method == 'POST':
@@ -885,6 +885,7 @@ def get_upload_url(request):
         return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 
+@csrf_exempt
 def get_image_url(request, file_name):
     file_path = f"profile_pictures/{file_name}"  # Path to the image in S3
 
