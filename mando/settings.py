@@ -47,10 +47,6 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# Ensure CSRF protection works with cross-origin requests
-CSRF_COOKIE_NAME = "csrftoken"
-CSRF_HEADER_NAME = "X-CSRFToken"
-
 CORS_ALLOW_CREDENTIALS = True
 
 '''
@@ -63,7 +59,7 @@ CSRF_TRUSTED_ORIGINS = [
 
 # Ensure CSRF cookie is sent over cross-origin requests
 CSRF_COOKIE_HTTPONLY = False
-CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = None
 CSRF_COOKIE_SECURE = False  # Use True in production if using HTTPS
 
 
