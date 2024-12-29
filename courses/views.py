@@ -861,6 +861,7 @@ from django.conf import settings
 from .utils.s3_utils import generate_presigned_url
 from django.views.decorators.csrf import csrf_exempt
 
+@csrf_exempt
 def get_upload_url(request):
     if request.method == 'POST':
         file_name = request.POST.get('file_name')  # Get file name from POST data
