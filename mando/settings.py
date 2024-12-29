@@ -47,6 +47,10 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
+# Ensure CSRF protection works with cross-origin requests
+CSRF_COOKIE_NAME = "csrftoken"
+CSRF_HEADER_NAME = "X-CSRFToken"
+
 CORS_ALLOW_CREDENTIALS = True
 
 '''
