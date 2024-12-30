@@ -95,7 +95,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
-    'django.middleware.csrf.CsrfResponseMiddleware',
 ]
 
 ROOT_URLCONF = 'mando.urls'
