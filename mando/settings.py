@@ -5,18 +5,11 @@ import logging
 
 
 APPEND_SLASH=True
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-
-# Quick-start development settings - unsuitable for production
-
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
-# DJANGO_ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "mando.koyeb.app")
-# print(DJANGO_ALLOWED_HOSTS) 
 
 # ALLOWED_HOSTS = DJANGO_ALLOWED_HOSTS.split(",")
 ALLOWED_HOSTS = [ 
@@ -168,20 +161,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
-
-# STATIC_URL = 'static/'
-
-# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-# STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
-# #MEDIA_URL = '/media/'
-# MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-import os
-import logging
-
 # AWS S3 Configuration
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')  # AWS Access Key
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')  # AWS Secret Key
@@ -192,9 +171,7 @@ AWS_S3_SIGNATURE_VERSION = 's3v4'  # Correct name for the signature version
 AWS_S3_FILE_OVERWRITE = False  # Do not overwrite files with the same name
 AWS_S3_VERIFY = True  # Verify SSL certificates
 
-# Endpoint URL is only needed if you're using a custom endpoint (e.g., for local S3-compatible storage)
-# Remove it for standard AWS S3 configuration
-# AWS_S3_ENDPOINT_URL = 'https://s3.eu-north-1.amazonaws.com'
+
 
 # Default file storage for media files
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
