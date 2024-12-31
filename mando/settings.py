@@ -6,6 +6,7 @@ import logging
 
 APPEND_SLASH=True
 # SECURITY WARNING: keep the secret key used in production secret!
+
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -47,6 +48,7 @@ Delete after use
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
+    'http://127.0.0.1:8000',
 ]
 
 # Ensure CSRF cookie is sent over cross-origin requests
@@ -74,7 +76,6 @@ INSTALLED_APPS = [
     'courses.apps.CoursesConfig',
     'notifications.apps.NotificationsConfig',
     'storages',
-    
 ]
 
 MIDDLEWARE = [
@@ -161,6 +162,10 @@ USE_I18N = True
 
 USE_TZ = True
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
 # AWS S3 Configuration
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')  # AWS Access Key
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')  # AWS Secret Key
@@ -215,6 +220,8 @@ REST_FRAMEWORK = {
     'COERCE_DECIMAL_TO_STRING': False,
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        # 'rest_framework.parsers.MultiPartParser',
+        # 'rest_framework.parsers.FormParser',
     ),
      'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',

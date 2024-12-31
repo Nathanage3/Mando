@@ -8,6 +8,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from rest_framework import viewsets, status, serializers
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAdminUser
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, SAFE_METHODS, AllowAny
@@ -36,47 +37,103 @@ import io
 
 
 class CustomerViewSet(viewsets.ModelViewSet):
-    queryset = Customer.objects.all()
-    serializer_class = CustomerSerializer
-    permission_classes = [IsAdminUser]
+    pass
+    # queryset = Customer.objects.all()
+    # serializer_class = CustomerSerializer
+    # permission_classes = [IsAdminUser]
     
-    @action(detail=True, permission_classes=[ViewCustomerHistoryPermission])
-    def history(self, request, pk):
-        return Response('Ok')
+    # @action(detail=True, permission_classes=[ViewCustomerHistoryPermission])
+    # def history(self, request, pk):
+    #     return Response('Ok')
 
-    @action(detail=False, methods=['GET', 'PUT'], permission_classes=[IsAuthenticated])
-    def me(self, request):
-        (customer, created) = Customer.objects.get_or_create(user_id=request.user.id)
-        if request.method == 'GET':
-            serializer = CustomerSerializer(customer)
-            return Response(serializer.data)
+    # @action(detail=False, methods=['GET', 'PUT'], permission_classes=[IsAuthenticated])
+    # def me(self, request):
+    #     (customer, created) = Customer.objects.get_or_create(user_id=request.user.id)
+    #     if request.method == 'GET':
+    #         serializer = CustomerSerializer(customer)
+    #         return Response(serializer.data)
         
-        elif request.method == 'PUT':
-            serializer = CustomerSerializer(customer, data=request.data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data)
+    #     elif request.method == 'PUT':
+    #         serializer = CustomerSerializer(customer, data=request.data)
+    #         serializer.is_valid(raise_exception=True)
+    #         serializer.save()
+    #         return Response(serializer.data)
         
     
-    @action(detail=False, methods=['PUT'], permission_classes=[IsAuthenticated])
-    def update_profile_picture(self, request):
-        try:
-            # Fetch the customer linked to the authenticated user
-            customer = Customer.objects.get(user=request.user)
+    # @action(detail=False, methods=['PUT'], permission_classes=[IsAuthenticated])
+    # def update_profile_picture(self, request):
+    #     print("Hello 1")
+    #     print("Request Files: ", request.FILES)
+    #     print("Request Data: ", request.data)
+    #     print("Request Content-Type: ", request.content_type)
+    #     print("heloo 2")
+    #     try:
+    #         # Fetch the customer linked to the authenticated user
+    #         customer = Customer.objects.get(user=request.user)
         
-            # Check if 'profile_picture' is in the uploaded files
-            profile_picture = request.FILES.get('profile_picture')
-            if not profile_picture:
-                return Response({'error': 'No profile picture uploaded'}, status=400)
+    #         # Check if 'profile_picture' is in the uploaded files
+    #         profile_picture = request.FILES.get('profile_picture')
+    #         if not profile_picture:
+    #             return Response({'error': 'No profile picture uploaded'}, status=400)
         
-            # Update the profile picture for the Customer
-            customer.profile_picture = profile_picture
-            customer.save()
+    #         # Update the profile picture for the Customer
+    #         customer.profile_picture = profile_picture
+    #         customer.save()
 
-            return Response({'status': 'Profile picture updated successfully'}, status=200)
+    #         return Response({'status': 'Profile picture updated successfully'}, status=200)
     
-        except Customer.DoesNotExist:
-            return Response({'error': 'Customer not found'}, status=404)
+    #     except Customer.DoesNotExist:
+    #         return Response({'error': 'Customer not found'}, status=404)
+        
+    # def get_parser_classes(self):
+    #     if self.action == 'update_profile_picture':
+    #         return [MultiPartParser, FormParser]
+    #     return super().get_parser_classes()
+
+
+# class CustomerViewSet(viewsets.ModelViewSet):
+#     queryset = Customer.objects.all()
+#     serializer_class = CustomerSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     @action(detail=False, methods=['PUT'], permission_classes=[IsAuthenticated])
+#     def update_profile_picture(self, request):
+#         print("------ File Upload Handling Logs ------")
+#         print("Request Content-Type: ", request.content_type)
+#         print("Request Data: ", request.data)
+#         print("Request Files: ", request.FILES)
+
+#         try:
+#             # Fetch the customer linked to the authenticated user
+#             customer = Customer.objects.get(user=request.user)
+
+#             # Check if 'profile_picture' is in the uploaded files
+#             profile_picture = request.FILES.get('profile_picture')
+#             if not profile_picture:
+#                 print("Error: No file provided for 'profile_picture'")
+#                 return Response({'error': 'No profile picture uploaded'}, status=400)
+
+#             # Log file details
+#             print("Uploaded File Name: ", profile_picture.name)
+#             print("Uploaded File Size: ", profile_picture.size)
+#             print("Uploaded File Content-Type: ", profile_picture.content_type)
+
+#             # Update the profile picture for the Customer
+#             customer.profile_picture = profile_picture
+#             customer.save()
+
+#             print("Profile picture updated successfully.")
+#             return Response({'status': 'Profile picture updated successfully'}, status=200)
+
+#         except Customer.DoesNotExist:
+#             print("Error: Customer not found for the current user.")
+#             return Response({'error': 'Customer not found'}, status=404)
+
+#     def get_parser_classes(self):
+#         if self.action == 'update_profile_picture':
+#             return [MultiPartParser, FormParser]
+#         return super().get_parser_classes()
+
 
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.select_related('instructor', 'collection').all().order_by('id')

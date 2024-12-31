@@ -7,7 +7,7 @@ from courses import views
 router = routers.DefaultRouter()
 router.register(r'courses', views.CourseViewSet, basename='courses')
 router.register('collections', views.CollectionViewSet, basename='collections')
-router.register('customers', views.CustomerViewSet, basename='customers')
+#router.register('customers', views.CustomerViewSet, basename='customers')
 router.register('course-progress', views.CourseProgressViewSet, basename='course-progress')
 router.register('instructor-earnings', views.InstructorEarningsViewSet, basename='instructor-earnings')
 router.register('orders', views.OrderViewSet, basename='orders')
@@ -57,8 +57,6 @@ urlpatterns = [
     path('', include(section_router.urls)),
     path('', include(purchased_course_router.urls)),
     path('', include(purchased_section_router.urls)),
-    # path('get-upload-url/', views.get_upload_url, name='get_upload_url'),
-    # path('get-image-url/<str:file_name>/', views.get_image_url, name='get_image_url'),
     path('instructors/<int:instructor_pk>/earnings/', views.InstructorEarningsViewSet.as_view({'get': 'list'})),
     path('courses/<int:course_pk>/sections/<int:section_pk>/questions/<int:pk>/answer/', views.QuestionViewSet.as_view({'post': 'question_answer'}), name='question-answer'),
 ]

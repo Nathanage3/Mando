@@ -13,7 +13,7 @@ class UserCreateSerializer(BaseUserCreateSerializer):
         model = User  # Ensure this points to your custom User model
         fields = ['email', 'password', 'first_name', 'last_name', 'role']
 
-
+'''
 class UserSerializer(BaseUserSerializer):
     profile_picture = serializers.ImageField(read_only=True)
    
@@ -21,7 +21,7 @@ class UserSerializer(BaseUserSerializer):
     class Meta(BaseUserSerializer.Meta):
         model = User  # Ensure this points to your custom User model
         fields = ['email', 'first_name', 'last_name', 'role', 'profile_picture']
-
+'''
 
 class SetPasswordSerializer(BaseSetPasswordSerializer):
     new_password = serializers.CharField(write_only=True)
@@ -30,6 +30,13 @@ class SetPasswordSerializer(BaseSetPasswordSerializer):
     class Meta:
         model = User  # Ensure this points to your custom User model
         fields = ['current_password', 'new_password', 're_new_password']
+
+
+class UserSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.ImageField()
+    class Meta:
+        model = User
+        fields = ['email', 'first_name', 'last_name', 'role', 'profile_picture']
 
 
 class SetPasswordSerializer(serializers.Serializer):

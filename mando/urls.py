@@ -32,6 +32,7 @@ from djoser import views as djoser_views
 # if settings.DEBUG:
 #     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) 
 
+"""
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import path, include
@@ -40,6 +41,8 @@ from django.conf.urls.static import static
 import debug_toolbar
 from courses import views
 from core import views as core_auth
+from djoser.views import UserViewSet as DjoserUserViewSet
+
 
 admin.site.site_header = 'Mando_Site Admin'
 admin.site.index_title = 'Admin'
@@ -62,7 +65,43 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+"""
 
+from django.contrib import admin
+from django.contrib.auth import views as auth_views
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+import debug_toolbar
+from courses import views
+from core.views import CustomUserViewSet  # Import the custom UserViewSet
+from rest_framework.routers import DefaultRouter
 
+admin.site.site_header = 'Mando_Site Admin'
+admin.site.index_title = 'Admin'
 
+# Define a router for the CustomUserViewSet
+router = DefaultRouter()
+router.register(r'users', CustomUserViewSet, basename='custom-user')
 
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', views.home, name='home'),
+    path('__debug__/', include(debug_toolbar.urls)),
+    path('notifications/', include('notifications.urls')),
+    path('auth/', include(router.urls)),
+    path('course/', include('courses.urls')),
+    path('auth/', include('djoser.urls')),
+    path('auth/', include('djoser.urls.jwt')),
+    path('auth/', include('djoser.urls.authtoken')),
+    
+    # Add routes for the custom UserViewSet
+    path('auth/', include(router.urls)),  # Integrate CustomUserViewSet routes
+    
+    # Password reset routes
+    path('auth/users/reset_password_confirm/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path('auth/users/reset_password_complete/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

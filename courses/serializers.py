@@ -61,7 +61,10 @@ class CourseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ['id', 'collection', 'title', 'courseFor', 'objectives', 'description', 'rating_count', 'average_rating', 'oldPrice', 'duration_in_hours', 'price', 'currency', 'instructor', 'level', 'syllabus', 'prerequisites', 'image', 'preview', 'numberOfStudents', 'promotions', 'last_update']
+        fields = ['id', 'collection', 'title', 'courseFor', 'objectives', 'description', 'rating_count', 'average_rating',
+                  'oldPrice', 'duration_in_hours', 'price', 'currency', 'instructor', 'level', 'syllabus', 'prerequisites',
+                  'image', 'preview', 'numberOfStudents', 'promotions', 'last_update'
+                  ]
 
     def get_instructor(self, course: Course):
         instructor = course.instructor
@@ -241,9 +244,8 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class CustomerSerializer(serializers.ModelSerializer):
-    # user_id = serializers.IntegerField(read_only=True)
-    # id = serializers.IntegerField(read_only=True)
-
+    pass
+    '''
     class Meta:
         model = Customer
         fields = ['bio', 'website', 'profile_picture']
@@ -255,7 +257,7 @@ class CustomerSerializer(serializers.ModelSerializer):
             instance.website = validated_data.get('website', instance.website)
             instance.save()
             return instance
-
+    '''
 
 class InstructorEarningsSerializer(serializers.ModelSerializer):
     earnings_after_deduction = serializers.SerializerMethodField()

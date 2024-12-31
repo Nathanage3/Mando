@@ -378,7 +378,8 @@ class Customer(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                                 related_name='customer_profile')
     bio = models.TextField(blank=True, null=True)
-    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
+    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True,
+                                        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'png', 'jpeg'])])
     website = models.URLField(blank=True, null=True)
 
     def __str__(self):
