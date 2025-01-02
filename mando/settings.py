@@ -216,17 +216,19 @@ AUTHENTICATION_BACKENDS = [
 
 AUTH_USER_MODEL = 'core.User'
 
+
 REST_FRAMEWORK = {
     'COERCE_DECIMAL_TO_STRING': False,
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-        # 'rest_framework.parsers.MultiPartParser',
-        # 'rest_framework.parsers.FormParser',
-    ),
-     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ],
 }
+
 
 # SIMPLE_JWT = {
 #     'ACCESS_TOKEN_LIFETIME': timedelta(days=2),
@@ -239,7 +241,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'nathan3chat@gmail.com'
 EMAIL_HOST_PASSWORD = 'lria sktz ltvv htdx'  # Ensure this is the correct password
-DEFAULT_FROM_EMAIL = 'nathan3chat@gmail.com'
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER 
 
 
 SIMPLE_JWT = {
@@ -263,11 +265,16 @@ FRONTEND_URL = 'http://localhost:5173'
 DJOSER = {
     'USER_ID_FIELD': 'id',
     'LOGIN_FIELD': 'email',
-    'PASSWORD_RESET_CONFIRM_URL': 'reset-password/{{uid}}/{{token}}',
-    'SEND_ACTIVATION_EMAIL': False,
-    'ACTIVATION_URL': 'activate/{{uid}}/{{token}}',
-    'EMAIL_RESET_CONFIRM_URL': 'reset-email/{{uid}}/{{token}}',
-    'PASSWORD_RESET_COMPLETE_URL': 'reset-password-complete/',
+    #'PASSWORD_RESET_CONFIRM_URL': '/reset-password-confirm/{uid}/{token}/',
+    'PASSWORD_RESET_CONFIRM_URL': f'{FRONTEND_URL}/reset-password-confirm/{{uid}}/{{token}}/',
+    'USER_CREATE_PASSWORD_RETYPE': True,
+    'SET_PASSWORD_RETYPE': True,
+    'PASSWORD_RESET_CONFIRM_RETYPE': True,
+    'SEND_ACTIVATION_EMAIL': True,
+    'ACTIVATION_URL': 'activate/{uid}/{token}',
+    'EMAIL_RESET_CONFIRM_URL': 'reset-email/{uid}/{token}',
+    #'PASSWORD_RESET_COMPLETE_URL': 'reset-password-complete/',
+    'PASSWORD_RESET_COMPLETE_URL': f'{FRONTEND_URL}/reset-password-complete/',
     'SERIALIZERS': {
         'user_create': 'core.serializers.UserCreateSerializer',
         'user': 'core.serializers.UserSerializer',
@@ -275,13 +282,13 @@ DJOSER = {
         'set_password': 'core.serializers.SetPasswordSerializer',
         'set_email': 'core.serializers.SetEmailSerializer',
     },
-    
+    'USER_VIEWSET': 'core.views.CustomUserViewSet',
     'PERMISSIONS': {
         'activation': ['rest_framework.permissions.AllowAny'],
         'password_reset': ['rest_framework.permissions.AllowAny'],
         'password_reset_confirm': ['rest_framework.permissions.AllowAny'],
-        'set_password': ['rest_framework.permissions.AllowAny'],
         'username_reset_confirm': ['rest_framework.permissions.AllowAny'],
+        'set_password': ['rest_framework.permissions.IsAuthenticated'],
         'set_email': ['rest_framework.permissions.IsAuthenticated'],
     }
 }

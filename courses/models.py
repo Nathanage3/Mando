@@ -14,7 +14,6 @@ from moviepy.editor import VideoFileClip
 import io
 
 
-
 class Collection(models.Model):
     title = models.CharField(max_length=255)
     featured_course = models.ForeignKey(
@@ -514,7 +513,8 @@ class CoreValue(models.Model):
 class StaffMember(models.Model):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
-    image = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
+    image = models.ImageField(upload_to='profile_pictures/', blank=True, null=True,
+                              validators=[FileExtensionValidator(allowed_extensions=['jpg', 'png', 'jpeg'])])
     phone = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     fb = models.CharField(max_length=255, default='https://www.facebook.com/')
@@ -526,7 +526,8 @@ class StaffMember(models.Model):
 
 class Testimonial(models.Model):
     full_name = models.CharField(max_length=255)
-    image = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
+    image = models.ImageField(upload_to='profile_pictures/', blank=True, null=True,
+                              validators=[FileExtensionValidator(allowed_extensions=['jpg', 'png', 'jpeg'])])
     title = models.TextField()
 
 

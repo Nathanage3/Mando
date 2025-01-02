@@ -74,34 +74,29 @@ from django.conf import settings
 from django.conf.urls.static import static
 import debug_toolbar
 from courses import views
-from core.views import CustomUserViewSet  # Import the custom UserViewSet
-from rest_framework.routers import DefaultRouter
+from core.views import verify_email
+from django.contrib.auth import views as auth_views
 
 admin.site.site_header = 'Mando_Site Admin'
 admin.site.index_title = 'Admin'
 
-# Define a router for the CustomUserViewSet
-router = DefaultRouter()
-router.register(r'users', CustomUserViewSet, basename='custom-user')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
     path('__debug__/', include(debug_toolbar.urls)),
     path('notifications/', include('notifications.urls')),
-    path('auth/', include(router.urls)),
-    path('course/', include('courses.urls')),
     path('auth/', include('djoser.urls')),
-    path('auth/', include('djoser.urls.jwt')),
-    path('auth/', include('djoser.urls.authtoken')),
-    
-    # Add routes for the custom UserViewSet
-    path('auth/', include(router.urls)),  # Integrate CustomUserViewSet routes
-    
-    # Password reset routes
-    path('auth/users/reset_password_confirm/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
-    path('auth/users/reset_password_complete/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
-]
+    path('auth/', include('djoser.urls.jwt')),  # Include JWT URLs if you're using JWT authentication
+    path('auth/', include('djoser.urls.authtoken')),  # Include authtoken URLs if you're using token authentication
+    path('course/', include('courses.urls')),
+    path('auth/verify-email/<str:token>/', verify_email, name='verify_email'),
+
+    path('reset-password/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path('reset-password-complete/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
+   
+    ]
+
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
