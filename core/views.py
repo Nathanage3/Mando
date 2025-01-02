@@ -158,41 +158,6 @@ class CustomUserViewSet(UserViewSet):
             logger.error(f"Error creating activation token: {e}")
             return Response({'error': 'Failed to create activation token'}, status=500)
         
-
-"""
-from django.shortcuts import render, redirect
-from core.models import UserActivationToken, User
-from django.http import HttpResponse
-
-
-def verify_email(request, token):
-    uid = request.GET.get('uid')
-    if not uid:
-        return HttpResponse('User ID is missing', status=400)
-
-    try:
-        user = User.objects.get(pk=uid)
-        user_activation_token = UserActivationToken.objects.get(user=user, token=token)
-
-        if user_activation_token.is_expired():
-            return HttpResponse('Token expired', status=400)
-
-        # Activate user and delete token
-        user.is_active = True
-        user.save()
-        user_activation_token.delete()
-
-        return HttpResponse('Email verified successfully', status=200)
-
-    except UserActivationToken.DoesNotExist:
-        return HttpResponse('Invalid token', status=400)
-    except User.DoesNotExist:
-        return HttpResponse('User not found', status=404)
-    except Exception as e:
-        logger.error(f"Unexpected error during email verification: {e}")
-        return HttpResponse('An unexpected error occurred', status=500)
-"""
-
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from .models import UserActivationToken, User

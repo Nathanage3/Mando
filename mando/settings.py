@@ -217,23 +217,29 @@ AUTHENTICATION_BACKENDS = [
 AUTH_USER_MODEL = 'core.User'
 
 
+# REST_FRAMEWORK = {
+#     'COERCE_DECIMAL_TO_STRING': False,
+#     'DEFAULT_PERMISSION_CLASSES': [
+#         'rest_framework.permissions.AllowAny',
+#     ],
+#     'DEFAULT_AUTHENTICATION_CLASSES': [
+#         'rest_framework.authentication.SessionAuthentication',
+#         'rest_framework.authentication.BasicAuthentication',
+#         'rest_framework.authentication.TokenAuthentication',
+#         'rest_framework_simplejwt.authentication.JWTAuthentication',
+#     ],
+# }
+
 REST_FRAMEWORK = {
     'COERCE_DECIMAL_TO_STRING': False,
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.AllowAny',  # Use more restrictive permissions in production
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # Prioritize JWT authentication
     ],
 }
 
-
-# SIMPLE_JWT = {
-#     'ACCESS_TOKEN_LIFETIME': timedelta(days=2),
-#     'AUTH_HEADER_TYPES': ('JWT',),
-# }
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
@@ -288,7 +294,8 @@ DJOSER = {
         'username_reset': ['rest_framework.permissions.AllowAny'],
         'set_password': ['rest_framework.permissions.IsAuthenticated'],
         'set_email': ['rest_framework.permissions.IsAuthenticated'],
-    }
+    },
+    'TOKEN_MODEL': None,
 }
 
 
