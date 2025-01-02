@@ -157,7 +157,8 @@ class CustomUserViewSet(UserViewSet):
         except Exception as e:
             logger.error(f"Error creating activation token: {e}")
             return Response({'error': 'Failed to create activation token'}, status=500)
-    
+        
+
 """
 from django.shortcuts import render, redirect
 from core.models import UserActivationToken, User

@@ -44,3 +44,4 @@ def send_activation_email(sender, instance, created, **kwargs):
         )
 
         logger.info(f"Activation email sent to {instance.email}.")
+

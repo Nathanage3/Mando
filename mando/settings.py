@@ -265,16 +265,14 @@ FRONTEND_URL = 'http://localhost:5173'
 DJOSER = {
     'USER_ID_FIELD': 'id',
     'LOGIN_FIELD': 'email',
-    #'PASSWORD_RESET_CONFIRM_URL': '/reset-password-confirm/{uid}/{token}/',
-    'PASSWORD_RESET_CONFIRM_URL': f'{FRONTEND_URL}/reset-password-confirm/{{uid}}/{{token}}/',
     'USER_CREATE_PASSWORD_RETYPE': True,
     'SET_PASSWORD_RETYPE': True,
     'PASSWORD_RESET_CONFIRM_RETYPE': True,
     'SEND_ACTIVATION_EMAIL': True,
     'ACTIVATION_URL': 'activate/{uid}/{token}',
     'EMAIL_RESET_CONFIRM_URL': 'reset-email/{uid}/{token}',
-    #'PASSWORD_RESET_COMPLETE_URL': 'reset-password-complete/',
-    'PASSWORD_RESET_COMPLETE_URL': f'{FRONTEND_URL}/reset-password-complete/',
+    'PASSWORD_RESET_COMPLETE_URL': 'reset-password-complete/',
+    'PASSWORD_RESET_CONFIRM_URL': 'reset-password/{uid}/{token}/',
     'SERIALIZERS': {
         'user_create': 'core.serializers.UserCreateSerializer',
         'user': 'core.serializers.UserSerializer',
@@ -285,9 +283,9 @@ DJOSER = {
     'USER_VIEWSET': 'core.views.CustomUserViewSet',
     'PERMISSIONS': {
         'activation': ['rest_framework.permissions.AllowAny'],
-        'password_reset': ['rest_framework.permissions.AllowAny'],
         'password_reset_confirm': ['rest_framework.permissions.AllowAny'],
-        'username_reset_confirm': ['rest_framework.permissions.AllowAny'],
+        'password_reset_confirm': ['rest_framework.permissions.AllowAny'],
+        'username_reset': ['rest_framework.permissions.AllowAny'],
         'set_password': ['rest_framework.permissions.IsAuthenticated'],
         'set_email': ['rest_framework.permissions.IsAuthenticated'],
     }
