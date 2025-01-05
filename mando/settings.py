@@ -20,9 +20,10 @@ ALLOWED_HOSTS = [
                 "127.0.0.1",
                 ]
 
-#CORS_ALLOWED_ORIGINS = ['http://localhost:5173']
+FRONTEND_URL = 'http://localhost:5173'
+#CORS_ALLOWED_ORIGINS = ['{FRONTEND_URL}']
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
+    FRONTEND_URL,
     'http://127.0.0.1:5173',
     'https://mandotest.netlify.app'
 
@@ -45,8 +46,11 @@ CORS_ALLOW_CREDENTIALS = True
 '''
 Delete after use
 '''
+
+ 
+
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:5173',
+    FRONTEND_URL,
     'http://127.0.0.1:5173',
     'http://127.0.0.1:8000',
 ]
@@ -66,6 +70,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
@@ -84,6 +89,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'django.middleware.cache.CacheMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -91,13 +97,15 @@ MIDDLEWARE = [
     'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
+SITE_ID = 1
+
 ROOT_URLCONF = 'mando.urls'
 
 INTERNAL_IPS = ['127.0.0.1',
                 ]
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
+#BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -213,7 +221,6 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 
-
 AUTH_USER_MODEL = 'core.User'
 
 
@@ -233,20 +240,19 @@ AUTH_USER_MODEL = 'core.User'
 REST_FRAMEWORK = {
     'COERCE_DECIMAL_TO_STRING': False,
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',  # Use more restrictive permissions in production
+        'rest_framework.permissions.IsAuthenticated',  # Use more restrictive permissions in production
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',  # Prioritize JWT authentication
     ],
 }
 
-
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'nathan3chat@gmail.com'
-EMAIL_HOST_PASSWORD = 'lria sktz ltvv htdx'  # Ensure this is the correct password
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # Ensure this is the correct password
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER 
 
 
@@ -266,7 +272,33 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
 }
 
-FRONTEND_URL = 'http://localhost:5173'
+
+# DJOSER = {
+#     'USER_ID_FIELD': 'id',
+#     'LOGIN_FIELD': 'email',
+#     'USER_CREATE_PASSWORD_RETYPE': True,
+#     'SET_PASSWORD_RETYPE': True,
+#     'PASSWORD_RESET_CONFIRM_RETYPE': True,
+#     'SEND_ACTIVATION_EMAIL': True,
+#     'ACTIVATION_URL': f'{FRONTEND_URL}/activate/{{uid}}/{{token}}',
+#     'EMAIL_RESET_CONFIRM_URL': f'{FRONTEND_URL}/reset-email/{{uid}}/{{token}}',
+#     'PASSWORD_RESET_COMPLETE_URL': f'{FRONTEND_URL}/reset-password-complete/',
+#     'PASSWORD_RESET_CONFIRM_URL': f'{FRONTEND_URL}/reset-password/{{uid}}/{{token}}',
+#     'SERIALIZERS': {
+#         'user_create': 'core.serializers.UserCreateSerializer',
+#         'user': 'core.serializers.UserSerializer',
+#         'current_user': 'core.serializers.UserSerializer',
+#     },
+#     'USER_VIEWSET': 'core.views.CustomUserViewSet',
+#     'PERMISSIONS': {
+#         'activation': ['rest_framework.permissions.AllowAny'],
+#         'password_reset_confirm': ['rest_framework.permissions.AllowAny'],
+#         'username_reset': ['rest_framework.permissions.AllowAny'],
+#         'set_password': ['rest_framework.permissions.IsAuthenticated'],
+#         'set_email': ['rest_framework.permissions.IsAuthenticated'],
+#     },
+#     'TOKEN_MODEL': None,
+# }
 
 DJOSER = {
     'USER_ID_FIELD': 'id',
@@ -275,21 +307,18 @@ DJOSER = {
     'SET_PASSWORD_RETYPE': True,
     'PASSWORD_RESET_CONFIRM_RETYPE': True,
     'SEND_ACTIVATION_EMAIL': True,
-    'ACTIVATION_URL': 'activate/{uid}/{token}',
-    'EMAIL_RESET_CONFIRM_URL': 'reset-email/{uid}/{token}',
-    'PASSWORD_RESET_COMPLETE_URL': 'reset-password-complete/',
-    'PASSWORD_RESET_CONFIRM_URL': 'reset-password/{uid}/{token}/',
+    'ACTIVATION_URL': 'activate/{uid}/{token}',  # Relative path for Django Sites
+    'EMAIL_RESET_CONFIRM_URL': 'reset-email/{uid}/{token}',  # Relative path for Django Sites
+    'PASSWORD_RESET_COMPLETE_URL': 'reset-password-complete/',  # Relative path for Django Sites
+    'PASSWORD_RESET_CONFIRM_URL': 'reset-password/{uid}/{token}',  # Relative path for Django Sites
     'SERIALIZERS': {
         'user_create': 'core.serializers.UserCreateSerializer',
         'user': 'core.serializers.UserSerializer',
         'current_user': 'core.serializers.UserSerializer',
-        'set_password': 'core.serializers.SetPasswordSerializer',
-        'set_email': 'core.serializers.SetEmailSerializer',
     },
     'USER_VIEWSET': 'core.views.CustomUserViewSet',
     'PERMISSIONS': {
         'activation': ['rest_framework.permissions.AllowAny'],
-        'password_reset_confirm': ['rest_framework.permissions.AllowAny'],
         'password_reset_confirm': ['rest_framework.permissions.AllowAny'],
         'username_reset': ['rest_framework.permissions.AllowAny'],
         'set_password': ['rest_framework.permissions.IsAuthenticated'],

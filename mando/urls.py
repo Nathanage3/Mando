@@ -74,8 +74,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 import debug_toolbar
 from courses import views
-from core.views import verify_email
-from django.contrib.auth import views as auth_views
+
 
 admin.site.site_header = 'Mando_Site Admin'
 admin.site.index_title = 'Admin'
@@ -83,18 +82,17 @@ admin.site.index_title = 'Admin'
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('course/', include('courses.urls')),
     path('', views.home, name='home'),
+    path('', include('core.urls')),
     path('__debug__/', include(debug_toolbar.urls)),
     path('notifications/', include('notifications.urls')),
+   
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.jwt')),  # Include JWT URLs if you're using JWT authentication
-    path('auth/', include('djoser.urls.authtoken')),  # Include authtoken URLs if you're using token authentication
-    path('course/', include('courses.urls')),
-    path('auth/verify-email/<str:token>/', verify_email, name='verify_email'),
-
+    path('auth/', include('djoser.urls.authtoken')),  # Include authtoken URLs if you're using token authenticatio
     path('reset-password/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('reset-password-complete/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
-   
     ]
 
 

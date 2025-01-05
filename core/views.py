@@ -1,121 +1,30 @@
-# from rest_framework.decorators import action
-# from rest_framework.response import Response
-# from rest_framework.permissions import IsAuthenticated
-# from djoser.views import UserViewSet
-# from django.http import JsonResponse
-
-# class CustomUserViewSet(UserViewSet):
-#     """
-#     Custom User ViewSet to handle additional user-related actions.
-#     Inherits from Djoser's UserViewSet.
-#     """
-
-#     def set_password(self, request, *args, **kwargs):
-#         """
-#         Override Djoser's set_password to handle custom exceptions.
-#         """
-#         try:
-#             response = super().set_password(request, *args, **kwargs)
-#             return response
-#         except KeyError as e:
-#             return JsonResponse({'error': str(e)}, status=400)
-
-#     @action(detail=False, methods=['put'], permission_classes=[IsAuthenticated])
-#     def update_profile_picture(self, request):
-#         """
-#         Custom action to update the user's profile picture.
-#         """
-#         try:
-#             # Fetch the authenticated user
-#             user = request.user
-
-#             # Check if 'profile_picture' is in the uploaded files
-#             profile_picture = request.FILES.get('profile_picture')
-#             if not profile_picture:
-#                 return Response({'error': 'No profile picture uploaded'}, status=400)
-
-#             # Update the profile picture
-#             user.profile_picture = profile_picture
-#             user.save()
-
-#             return Response({'status': 'Profile picture updated successfully'}, status=200)
-
-#         except Exception as e:
-#             return Response({'error': str(e)}, status=500)
-        
-# # core/views.py
-
-# from rest_framework.response import Response
-# from rest_framework import status
-# from rest_framework.decorators import api_view
-# from django.contrib.auth.models import User
-# from django.db import transaction
-# from courses.models import UserActivationToken
-# from courses.emails import send_activation_email  # Import the email utility function
-# import logging
-
-# logger = logging.getLogger(__name__)
-
-
-# @api_view(['POST'])
-# def create_user(request):
-#     """
-#     API endpoint to create a user and return the activation token.
-#     """
-#     try:
-#         with transaction.atomic():
-#             # Extract user data from request
-#             email = request.data.get('email')
-#             password = request.data.get('password')
-
-#             # Validate required fields
-#             if not all([email, password]):
-#                 return Response({"error": "All fields are required."}, status=status.HTTP_400_BAD_REQUEST)
-
-#             # Create the user
-#             user = User.objects.create_user(email=email, password=password)
-
-#             # Generate the activation token
-#             activation_token, created = UserActivationToken.objects.get_or_create(user=user)
-
-#             # Send activation email
-#             send_activation_email(user, activation_token.token)
-
-#             # Return response to frontend
-#             return Response({
-#                 "message": "User created successfully. Activation email sent.",
-#                 "user_id": user.id,
-#                 "activation_token": str(activation_token.token),
-#                 "email": user.email
-#             }, status=status.HTTP_201_CREATED)
-#     except Exception as e:
-#         logger.error(f"Error creating user: {str(e)}")
-#         return Response({"error": "Failed to create user."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from djoser.views import UserViewSet
+from django.conf import settings
 from django.http import JsonResponse
-from .models import UserActivationToken
-from django.views.decorators.csrf import csrf_exempt
-from django.core.exceptions import ValidationError
+from django.contrib.sites.shortcuts import get_current_site
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.template.loader import render_to_string
+from django.utils.encoding import force_bytes, force_str
+from django.shortcuts import render, redirect
+from .forms import CustomUserCreationForm
+from .tokens import account_activation_token
+from django.core.mail import EmailMultiAlternatives
+from .models import User
 import logging
 import uuid
 
+
 logger = logging.getLogger(__name__)
+
 
 class CustomUserViewSet(UserViewSet):
     """
     Custom User ViewSet to handle additional user-related actions.
     Inherits from Djoser's UserViewSet.
     """
-
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
-    @csrf_exempt
-    def reset_password(self, request):
-        # Your custom password reset logic here (if any)
-        pass
 
     @action(detail=False, methods=['put'], permission_classes=[IsAuthenticated])
     def update_profile_picture(self, request):
@@ -139,59 +48,72 @@ class CustomUserViewSet(UserViewSet):
         except Exception as e:
             logger.error(f"Error updating profile picture: {str(e)}")
             return Response({'error': str(e)}, status=500)
-        
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
-    def create_activation_token(self, request):
-        try:
-            user = request.user
-            # Invalidate existing token if it exists
-            UserActivationToken.objects.filter(user=user).delete()
 
-            # Generate new token
-            activation_token = UserActivationToken.objects.create(user=user)
+'''Adding new lines of codes'''
 
-            return Response({
-                "message": "Activation token created successfully.",
-                "activation_token": str(activation_token.token),
-            }, status=201)
-        except Exception as e:
-            logger.error(f"Error creating activation token: {e}")
-            return Response({'error': 'Failed to create activation token'}, status=500)
-        
-from django.shortcuts import get_object_or_404
-from django.http import JsonResponse, HttpResponse
-from .models import UserActivationToken, User
-import logging
+def signup(request):
+    if request.method == 'POST':
+        print("POST Data:", request.POST)  # Log the submitted data
+        form = CustomUserCreationForm(request.POST)
+        if not form.is_valid():
+            print("Form is not valid")
+            print("Form errors:", form.errors)
+        else:
+            print("Form is valid")
+            user = form.save(commit=False)
+            user.is_active = False
+            user.save()
+            print("User saved successfully:", user)
 
-# Configure logger
-logger = logging.getLogger(__name__)
+            # Generate activation link
+            frontend_url = settings.FRONTEND_URL
+            activation_link = f"{frontend_url}/activate/{urlsafe_base64_encode(force_bytes(user.pk))}/{account_activation_token.make_token(user)}"
+            print("Activation link:", activation_link)  # Debugging log
 
-def verify_email(request, token):
-    uid = request.GET.get('uid')
-   
-    if not uid:
-        return JsonResponse({'error': "User ID ('uid') is required."}, status=400)
+            # Send email confirmation
+            subject = 'Activate your account for MandoSite #2'
+            message = render_to_string('registration/account_activation_email.html', {
+                'user': user,
+                'activation_link': activation_link,
+            })
 
+            try:
+                email = EmailMultiAlternatives(
+                    subject=subject,
+                    body=message,
+                    from_email=settings.EMAIL_HOST_USER,
+                    to=[user.email],
+                )
+                email.attach_alternative(message, "text/html")
+                email.send()
+                print("Email sent successfully.")  # Debugging log
+            except Exception as e:
+                print("Error sending email:", e)
+
+            return redirect('account_activation_sent')
+    else:
+        form = CustomUserCreationForm()
+
+    return render(request, 'registration/signup.html', {'form': form})
+
+
+def account_activation_sent(request):
+    return JsonResponse({'message': 'Account activation email sent.'}, status=200)
+
+
+def activate(request, uidb64, token):
     try:
-        uid = int(uid.strip('/'))
-        user = get_object_or_404(User, pk=uid)
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        return JsonResponse({'error': 'Invalid activation link'}, status=400)
 
-        user_activation_token = get_object_or_404(UserActivationToken, user=user, token=token)
+    if user is not None and account_activation_token.check_token(user, token):
         user.is_active = True
         user.save()
-        """Uncomment this line if the token is useful after login"""
-        #user_activation_token.delete()
-    
-        return HttpResponse("Email verified successfully.", status=200)
+        return JsonResponse({'message': 'Account activated successfully. Please log in to access your account.'}, status=200)
+    else:
+        return JsonResponse({'error': 'Invalid activation token'}, status=400)
 
-    except ValueError as e:
-        return JsonResponse({'error': "'uid' must be a valid integer."}, status=400)
-
-    except User.DoesNotExist:
-        return JsonResponse({'error': "User not found."}, status=404)
-
-    except UserActivationToken.DoesNotExist:
-        return JsonResponse({'error': "Invalid token or activation token not found."}, status=404)
-
-    except Exception as e:
-        return JsonResponse({'error': "An unexpected error occurred."}, status=500)
+def account_activation_complete(request):
+    return JsonResponse({'message': 'Account activation complete.'}, status=200)
