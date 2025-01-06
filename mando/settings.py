@@ -61,7 +61,7 @@ CSRF_TRUSTED_ORIGINS = [
 CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = None
-CSRF_COOKIE_SECURE = True  # Use True in production if using HTTPS
+CSRF_COOKIE_SECURE = False  # Use True in production if using HTTPS
 
 
 # Application definition
