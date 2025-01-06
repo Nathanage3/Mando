@@ -125,4 +125,4 @@ def account_activation_complete(request):
 @ensure_csrf_cookie
 def get_csrf_token(request):
     csrf_token = get_token(request)
-    return JsonResponse({'message': 'CSRF cookie set'})
+    return JsonResponse({'message': 'CSRF cookie set', 'csrftoken': csrf_token})
