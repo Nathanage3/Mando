@@ -23,7 +23,7 @@ ALLOWED_HOSTS = [
 FRONTEND_URL = 'http://localhost:5173'
 #CORS_ALLOWED_ORIGINS = ['{FRONTEND_URL}']
 CORS_ALLOWED_ORIGINS = [
-    FRONTEND_URL,
+    'http://localhost:5173',
     'http://127.0.0.1:5173',
     'https://mandotest.netlify.app'
 
@@ -50,7 +50,7 @@ Delete after use
  
 
 CSRF_TRUSTED_ORIGINS = [
-    FRONTEND_URL,
+    'http://localhost:5173',
     'http://127.0.0.1:5173',
     'http://127.0.0.1:8000',
     'http://mando.koyeb.app',
@@ -61,7 +61,7 @@ CSRF_TRUSTED_ORIGINS = [
 CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = None
-CSRF_COOKIE_SECURE = False  # Use True in production if using HTTPS
+CSRF_COOKIE_SECURE = True  # Use True in production if using HTTPS
 
 
 # Application definition
