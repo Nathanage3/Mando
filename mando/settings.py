@@ -60,8 +60,8 @@ CSRF_TRUSTED_ORIGINS = [
 # Ensure CSRF cookie is sent over cross-origin requests
 CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_COOKIE_HTTPONLY = False
-CSRF_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_SECURE = True  # Use True in production if using HTTPS
+CSRF_COOKIE_SAMESITE = None
+CSRF_COOKIE_SECURE = False  # Use True in production if using HTTPS
 
 
 # Application definition
@@ -225,20 +225,6 @@ AUTHENTICATION_BACKENDS = [
 
 AUTH_USER_MODEL = 'core.User'
 
-
-# REST_FRAMEWORK = {
-#     'COERCE_DECIMAL_TO_STRING': False,
-#     'DEFAULT_PERMISSION_CLASSES': [
-#         'rest_framework.permissions.AllowAny',
-#     ],
-#     'DEFAULT_AUTHENTICATION_CLASSES': [
-#         'rest_framework.authentication.SessionAuthentication',
-#         'rest_framework.authentication.BasicAuthentication',
-#         'rest_framework.authentication.TokenAuthentication',
-#         'rest_framework_simplejwt.authentication.JWTAuthentication',
-#     ],
-# }
-
 REST_FRAMEWORK = {
     'COERCE_DECIMAL_TO_STRING': False,
     'DEFAULT_PERMISSION_CLASSES': [
@@ -274,33 +260,6 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
 }
 
-
-# DJOSER = {
-#     'USER_ID_FIELD': 'id',
-#     'LOGIN_FIELD': 'email',
-#     'USER_CREATE_PASSWORD_RETYPE': True,
-#     'SET_PASSWORD_RETYPE': True,
-#     'PASSWORD_RESET_CONFIRM_RETYPE': True,
-#     'SEND_ACTIVATION_EMAIL': True,
-#     'ACTIVATION_URL': f'{FRONTEND_URL}/activate/{{uid}}/{{token}}',
-#     'EMAIL_RESET_CONFIRM_URL': f'{FRONTEND_URL}/reset-email/{{uid}}/{{token}}',
-#     'PASSWORD_RESET_COMPLETE_URL': f'{FRONTEND_URL}/reset-password-complete/',
-#     'PASSWORD_RESET_CONFIRM_URL': f'{FRONTEND_URL}/reset-password/{{uid}}/{{token}}',
-#     'SERIALIZERS': {
-#         'user_create': 'core.serializers.UserCreateSerializer',
-#         'user': 'core.serializers.UserSerializer',
-#         'current_user': 'core.serializers.UserSerializer',
-#     },
-#     'USER_VIEWSET': 'core.views.CustomUserViewSet',
-#     'PERMISSIONS': {
-#         'activation': ['rest_framework.permissions.AllowAny'],
-#         'password_reset_confirm': ['rest_framework.permissions.AllowAny'],
-#         'username_reset': ['rest_framework.permissions.AllowAny'],
-#         'set_password': ['rest_framework.permissions.IsAuthenticated'],
-#         'set_email': ['rest_framework.permissions.IsAuthenticated'],
-#     },
-#     'TOKEN_MODEL': None,
-# }
 
 DJOSER = {
     'USER_ID_FIELD': 'id',
