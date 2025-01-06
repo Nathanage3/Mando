@@ -14,6 +14,7 @@ from .tokens import account_activation_token
 from django.core.mail import EmailMultiAlternatives
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.middleware.csrf import get_token
 from .models import User
 import logging
 import uuid
@@ -123,4 +124,5 @@ def account_activation_complete(request):
 
 @ensure_csrf_cookie
 def get_csrf_token(request):
+    csrf_token = get_token(request)
     return JsonResponse({'message': 'CSRF cookie set'})
