@@ -91,8 +91,6 @@ urlpatterns = [
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.jwt')),  # Include JWT URLs if you're using JWT authentication
     path('auth/', include('djoser.urls.authtoken')),  # Include authtoken URLs if you're using token authenticatio
-    # path('reset-password/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
-    # path('reset-password-complete/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
     ]
 
 

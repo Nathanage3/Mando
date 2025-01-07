@@ -1,10 +1,14 @@
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth.views import PasswordResetConfirmView
 from djoser.views import UserViewSet
 from django.conf import settings
 from rest_framework.permissions import AllowAny
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import EmailMultiAlternatives
 from rest_framework import status
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
 from django.http import JsonResponse
 from django.contrib.sites.shortcuts import get_current_site
@@ -14,7 +18,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.shortcuts import render, redirect
 from rest_framework.decorators import api_view, permission_classes
 from .serializers import UserCreateSerializer
-from .tokens import account_activation_token
+from .tokens import account_activation_token, password_reset_token
 from django.core.mail import EmailMultiAlternatives
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -54,6 +58,13 @@ class CustomUserViewSet(UserViewSet):
         except Exception as e:
             logger.error(f"Error updating profile picture: {str(e)}")
             return Response({'error': str(e)}, status=500)
+
+
+
+class PasswordResetView(PasswordResetConfirmView):
+    # Optionally, you can customize this view
+    template_name = 'your_template.html'  # Use your actual template
+
 
 
 @api_view(['POST'])
@@ -110,7 +121,6 @@ def signup(request):
 @permission_classes([AllowAny])
 def activate(request, uidb64, token):
     """API endpoint for activating a user account."""
-    from django.contrib.auth import get_user_model
     User = get_user_model()
 
 
@@ -142,3 +152,70 @@ def some_protected_view(request):
 def get_csrf_token(request):
     csrf_token = get_token(request)
     return Response({'csrftoken': csrf_token})
+
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def reset_password_request(request):
+    """API endpoint to request a password reset."""
+    email = request.data.get('email')
+    if not email:
+        return Response({'error': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = get_user_model().objects.get(email=email)
+    except get_user_model().DoesNotExist:
+        return Response({'message': 'If an account with that email exists, a password reset link will be sent.'}, status=status.HTTP_200_OK)
+
+    # Generate password reset token and UID using the new password reset token generator
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = password_reset_token.make_token(user)
+
+    # Create reset password link (frontend will handle this URL)
+    reset_url = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}"
+
+    # Send password reset email
+    subject = "Password Reset Request for Mando Site #2"
+    message = f"Hi {user.first_name},\n\nPlease click the following link to reset your password: {reset_url}\n\nIf you did not request a password reset, please ignore this email.\n\nBest regards,\n\nMando Team"
+
+    try:
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=message,
+            from_email=settings.EMAIL_HOST_USER,
+            to=[user.email],
+        )
+        email.send()
+        return Response({'message': 'If an account with that email exists, a password reset link has been sent.'}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': f"Failed to send password reset email: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def reset_password_confirm(request, uidb64, token):
+    """API endpoint to confirm the password reset."""
+    try:
+        # Decode UID and retrieve user
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = get_user_model().objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, get_user_model().DoesNotExist):
+        return Response({'error': 'Invalid reset password link'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Verify the token
+    if password_reset_token.check_token(user, token):
+        password1 = request.data.get('password1')
+        password2 = request.data.get('password2')
+
+        if password1 != password2:
+            return Response({'error': 'Passwords do not match'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update user password
+        user.password = make_password(password1)
+        user.save()
+
+        return Response({'message': 'Password reset successfully.'}, status=status.HTTP_200_OK)
+    else:
+        return Response({'error': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)

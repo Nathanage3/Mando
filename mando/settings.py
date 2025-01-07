@@ -4,7 +4,7 @@ from datetime import timedelta
 import logging
 
 
-APPEND_SLASH=True
+APPEND_SLASH=False
 # SECURITY WARNING: keep the secret key used in production secret!
 
 SECRET_KEY = os.getenv('SECRET_KEY')
