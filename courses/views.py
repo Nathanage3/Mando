@@ -609,7 +609,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         if duplicate_courses:
             return Response({'detail': f"You have already purchased course: {list(duplicate_courses)}"}, status=status.HTTP_400_BAD_REQUEST)
 
-        order = Order.objects.create(customer=customer, payment_status='C')
+        order = Order.objects.create(customer=customer, payment_status='P')
 
         for item in cart.items.all():
             order_item = OrderItem.objects.create(
@@ -894,4 +894,3 @@ class SetEmailView(APIView):
 
 def home(request):
     return HttpResponse("Welcome to the home page!")
-

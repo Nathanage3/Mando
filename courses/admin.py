@@ -76,8 +76,8 @@ class CollectionAdmin(admin.ModelAdmin):
 
 @admin.register(models.Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ('user', 'first_name', 'last_name', 'orders_count')
-    search_fields = ('user__username', 'user__first_name', 'user__last_name')
+    list_display = ('user', 'orders_count')
+    search_fields = ('user__email', 'user__first_name', 'user__last_name')
     ordering = ('user__first_name', 'user__last_name')
 
     def get_queryset(self, request):

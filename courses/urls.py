@@ -7,7 +7,6 @@ from courses import views
 router = routers.DefaultRouter()
 router.register(r'courses', views.CourseViewSet, basename='courses')
 router.register('collections', views.CollectionViewSet, basename='collections')
-#router.register('customers', views.CustomerViewSet, basename='customers')
 router.register('course-progress', views.CourseProgressViewSet, basename='course-progress')
 router.register('instructor-earnings', views.InstructorEarningsViewSet, basename='instructor-earnings')
 router.register('orders', views.OrderViewSet, basename='orders')

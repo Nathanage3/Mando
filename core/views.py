@@ -57,6 +57,7 @@ class CustomUserViewSet(UserViewSet):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def signup(request):
     """API endpoint for user registration."""
     serializer = UserCreateSerializer(data=request.data)
