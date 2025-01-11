@@ -2,15 +2,8 @@ from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer,
                                UserSerializer as BaseUserSerializer, \
                                SetPasswordSerializer as BaseSetPasswordSerializer
 from rest_framework import serializers
-from django.contrib.auth.password_validation import validate_password
-from rest_framework import serializers
 from .models import User
-
-from rest_framework import serializers
 from django.conf import settings
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from .models import User
 import logging
 
 logger = logging.getLogger(__name__)
@@ -35,4 +28,4 @@ class UserSerializer(BaseUserSerializer):
     #role = serializers.ChoiceField(choices=User.ROLE_CHOICES, required=True)
     class Meta(BaseUserSerializer.Meta):
         model = User  # Ensure this points to your custom User model
-        fields = ['email', 'first_name', 'last_name', 'bio', 'website', 'profile_picture']
+        fields = ['email', 'first_name', 'last_name', 'bio', 'website', 'role', 'profile_picture']

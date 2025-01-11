@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save, post_delete
 from django.conf import settings
 from django.dispatch import receiver
-from courses.models import Lesson, Course, Customer, CourseProgress, Rating, OrderItem, Order, InstructorEarnings
+from courses.models import Lesson, SectionAttempt, Course, Customer, CourseProgress, Rating, OrderItem, Order, InstructorEarnings
 from notifications.notifications import send_notification_to_instructor, send_notification_to_customer
 
 

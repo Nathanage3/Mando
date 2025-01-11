@@ -140,11 +140,6 @@ class Course(models.Model):
         self.total_duration = total_duration
         self.save(update_fields=["total_duration"])
 
-    # def validate_file_size(value):
-    #     max_size = 2 * 1024 * 1024  # 2 MB
-    #     if value.size > max_size:
-    #         raise ValidationError(f"File size cannot exceed {max_size / (1024 * 1024)} MB.")
-
 class Rating(models.Model): 
     score = models.FloatField(validators=[MinValueValidator(1.0),
                                           MaxValueValidator(5.0)
@@ -249,7 +244,8 @@ class Section(models.Model):
 
 class Question(models.Model):
     text = models.TextField()
-    section = models.ForeignKey(Section, on_delete=models.CASCADE)
+    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name='questions')
+    count = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.text
@@ -258,8 +254,8 @@ class Question(models.Model):
         options = self.options.all()
         formatted_options = " ".join([f"option_{i + 1}: {option.text} is_correct" for i, option in enumerate(options)])
         return f"{self.id} {self.text} {formatted_options}"
-
-
+    
+   
 class Option(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='options')
     text = models.CharField(max_length=255)
@@ -271,9 +267,22 @@ class Option(models.Model):
 
 class StudentAnswer(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    selected_option = models.ForeignKey(Option, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='student_answers')
+    selected_option = models.ForeignKey(Option, on_delete=models.SET_NULL, null=True, blank=True)
 
+    class Meta:
+        unique_together = ('student', 'question')
+
+class SectionAttempt(models.Model):
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    section = models.ForeignKey(Section, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(auto_now_add=True)  # When the attempt was made
+    attempt_count = models.PositiveIntegerField(default=0)
+    def __str__(self):
+        return f"{self.student} attempted {self.section} at {self.timestamp}"
+
+    class Meta:
+        unique_together = ('student', 'section')
 
 class StudentScore(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -296,7 +305,7 @@ class StudentScore(models.Model):
     
     def calculate_progress(self):
         # Calculate progress after resetting the score
-        total_questions = self.section.question_set.count()
+        total_questions = self.section.questions.count()
         correct_answers = StudentAnswer.objects.filter(
             student=self.student,
             question__section=self.section,
@@ -503,7 +512,7 @@ class StaffMember(models.Model):
     twitter = models.CharField(max_length=255, default='https://www.x.com/')
     tiktok = models.CharField(max_length=255, blank=True, null=True)
     telegram_channel = models.CharField(max_length=255, blank=True, null=True)
-
+    is_admin = models.BooleanField(default=False) 
 
 class Testimonial(models.Model):
     full_name = models.CharField(max_length=255)

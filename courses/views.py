@@ -8,14 +8,15 @@ from django.http import HttpResponse, HttpResponseRedirect
 from rest_framework import viewsets, status, serializers
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAdminUser
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, SAFE_METHODS, AllowAny
-from .models import Course, Collection, Promotion, PaymentStatus, Customer, Description, Review, CourseProgress, Lesson, \
+from .models import Course, Collection, SectionAttempt, Promotion, PaymentStatus, Customer, Description, Review, CourseProgress, Lesson, \
     Order, OrderItem, Option, StudentAnswer, StudentScore, Cart, CartItem, Rating, WishList, WishListItem, Section, Question, \
     CompanyOverview, Mission, Vission, Testimonial, FAQ
-from .serializers import CourseSerializer, CourseDetailSerializer, CollectionSerializer, PromotionSerializer, \
+from .serializers import CourseSerializer, SocialMediaLinksSerializer, CourseDetailSerializer, CollectionSerializer, PromotionSerializer, \
     InstructorEarningsSerializer, RatingSerializer, DescriptionSerializer, ReviewSerializer, CourseProgressSerializer,CustomerSerializer, \
     InstructorEarnings, LessonSerializer, OrderSerializer, OrderItemSerializer, CartSerializer, CartItemSerializer, \
     WishListItemSerializer, WishListItemSerializer,  PaymentStatusSerializer, WishListSerializer, SectionSerializer, \
@@ -38,102 +39,6 @@ import io
 
 class CustomerViewSet(viewsets.ModelViewSet):
     pass
-    # queryset = Customer.objects.all()
-    # serializer_class = CustomerSerializer
-    # permission_classes = [IsAdminUser]
-    
-    # @action(detail=True, permission_classes=[ViewCustomerHistoryPermission])
-    # def history(self, request, pk):
-    #     return Response('Ok')
-
-    # @action(detail=False, methods=['GET', 'PUT'], permission_classes=[IsAuthenticated])
-    # def me(self, request):
-    #     (customer, created) = Customer.objects.get_or_create(user_id=request.user.id)
-    #     if request.method == 'GET':
-    #         serializer = CustomerSerializer(customer)
-    #         return Response(serializer.data)
-        
-    #     elif request.method == 'PUT':
-    #         serializer = CustomerSerializer(customer, data=request.data)
-    #         serializer.is_valid(raise_exception=True)
-    #         serializer.save()
-    #         return Response(serializer.data)
-        
-    
-    # @action(detail=False, methods=['PUT'], permission_classes=[IsAuthenticated])
-    # def update_profile_picture(self, request):
-    #     print("Hello 1")
-    #     print("Request Files: ", request.FILES)
-    #     print("Request Data: ", request.data)
-    #     print("Request Content-Type: ", request.content_type)
-    #     print("heloo 2")
-    #     try:
-    #         # Fetch the customer linked to the authenticated user
-    #         customer = Customer.objects.get(user=request.user)
-        
-    #         # Check if 'profile_picture' is in the uploaded files
-    #         profile_picture = request.FILES.get('profile_picture')
-    #         if not profile_picture:
-    #             return Response({'error': 'No profile picture uploaded'}, status=400)
-        
-    #         # Update the profile picture for the Customer
-    #         customer.profile_picture = profile_picture
-    #         customer.save()
-
-    #         return Response({'status': 'Profile picture updated successfully'}, status=200)
-    
-    #     except Customer.DoesNotExist:
-    #         return Response({'error': 'Customer not found'}, status=404)
-        
-    # def get_parser_classes(self):
-    #     if self.action == 'update_profile_picture':
-    #         return [MultiPartParser, FormParser]
-    #     return super().get_parser_classes()
-
-
-# class CustomerViewSet(viewsets.ModelViewSet):
-#     queryset = Customer.objects.all()
-#     serializer_class = CustomerSerializer
-#     permission_classes = [IsAuthenticated]
-
-#     @action(detail=False, methods=['PUT'], permission_classes=[IsAuthenticated])
-#     def update_profile_picture(self, request):
-#         print("------ File Upload Handling Logs ------")
-#         print("Request Content-Type: ", request.content_type)
-#         print("Request Data: ", request.data)
-#         print("Request Files: ", request.FILES)
-
-#         try:
-#             # Fetch the customer linked to the authenticated user
-#             customer = Customer.objects.get(user=request.user)
-
-#             # Check if 'profile_picture' is in the uploaded files
-#             profile_picture = request.FILES.get('profile_picture')
-#             if not profile_picture:
-#                 print("Error: No file provided for 'profile_picture'")
-#                 return Response({'error': 'No profile picture uploaded'}, status=400)
-
-#             # Log file details
-#             print("Uploaded File Name: ", profile_picture.name)
-#             print("Uploaded File Size: ", profile_picture.size)
-#             print("Uploaded File Content-Type: ", profile_picture.content_type)
-
-#             # Update the profile picture for the Customer
-#             customer.profile_picture = profile_picture
-#             customer.save()
-
-#             print("Profile picture updated successfully.")
-#             return Response({'status': 'Profile picture updated successfully'}, status=200)
-
-#         except Customer.DoesNotExist:
-#             print("Error: Customer not found for the current user.")
-#             return Response({'error': 'Customer not found'}, status=404)
-
-#     def get_parser_classes(self):
-#         if self.action == 'update_profile_picture':
-#             return [MultiPartParser, FormParser]
-#         return super().get_parser_classes()
-
 
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.select_related('instructor', 'collection').all().order_by('id')
@@ -435,60 +340,87 @@ class QuestionViewSet(viewsets.ModelViewSet):
 
          # No access
          raise PermissionDenied("You do not have permission to access this section's questions.")
+    @action(detail=False, methods=['post'], url_path='answer-all')
+    @transaction.atomic
+    def answer_all_questions(self, request, course_pk=None, section_pk=None):
+        section = get_object_or_404(Section, pk=section_pk)
+        student = request.user
+        answers = request.data.get('answers', None)  # Expecting a list of answers directly
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], url_path='answer')
-    def question_answer(self, request, course_pk=None, section_pk=None, pk=None):
-         question = self.get_object()
-         option_id = request.data.get('option_id')
-         student = request.user
+        if not isinstance(answers, list):
+            return Response({'error': 'Answers should be provided as a list.'}, status=status.HTTP_400_BAD_REQUEST)
 
-         if not option_id:
-             return Response({'error': 'Option ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        for answer_data in answers:
+            question_id = answer_data.get('question_id')
+            option_id = answer_data.get('option_id')
 
-         try:
-             option = Option.objects.get(id=option_id, question=question)
-         except Option.DoesNotExist:
-             return Response({'error': 'Invalid option'}, status=status.HTTP_400_BAD_REQUEST)
+            if not question_id or not option_id:
+                return Response({'error': 'Both question_id and option_id are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-         # Save student answer
-         student_answer = StudentAnswer.objects.create(
-             student=student,
-             question=question,
-             selected_option=option
-         )
+            question = get_object_or_404(Question, pk=question_id, section=section)
+            option = get_object_or_404(Option, pk=option_id, question=question)
 
-         # Update the Student Score
-         student_score, created = StudentScore.objects.get_or_create(
-             student=student,
-             section=question.section
-         )
-         student_score.calculate_progress()
-         passed = student_score.score >= 70.0
+            # Save student answer
+            StudentAnswer.objects.update_or_create(
+                student=student,
+                question=question,
+                defaults={'selected_option': option}
+            )
 
-         return Response({
-             'student_answer': StudentAnswerSerializer(student_answer).data,
-             'passed': passed,
-             'score': student_score.score
-         })
+        # Update student score after all answers
+        student_score, created = StudentScore.objects.get_or_create(
+            student=student,
+            section=section
+        )
+        student_score.calculate_progress()
 
+        return Response({
+            'score': student_score.score,
+            'passed': student_score.completed,
+            'progress': {
+                'correct_answers': StudentAnswer.objects.filter(
+                    student=student,
+                    question__section=section,
+                    selected_option__is_correct=True
+                ).count(),
+                'total_questions': section.questions.count()
+            }
+        })
+    
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='retake')
     def retake_exam(self, request, course_pk=None, section_pk=None):
-         section = get_object_or_404(Section, pk=section_pk)
-         student = request.user
+        section = get_object_or_404(Section, pk=section_pk)
+        student = request.user
 
-         try:
-             student_scores = StudentScore.objects.filter(student=student, section=section)
-             for student_score in student_scores:
-                 student_score.reset_score()
-         except StudentScore.DoesNotExist:
-             return Response({'error': 'No scores exist to reset for this section'}, status=status.HTTP_404_NOT_FOUND)
-
-         # Redirect to the list of questions for the section
-         questions_url = reverse('questions-list', kwargs={'course_pk': course_pk, 'section_pk': section_pk})
-         return HttpResponseRedirect(questions_url)
-
-
+       
+        section_attempt, created = SectionAttempt.objects.get_or_create(student=student, section=section)
     
+        # Increment the attempt count
+        section_attempt.attempt_count += 1
+        section_attempt.save()
+
+        student_scores = StudentScore.objects.filter(student=student, section=section)
+        student_scores.update(score=0)
+
+        # Clear all student answers for this section
+        student_answers = StudentAnswer.objects.filter(student=student, question__section=section)
+        student_answers.update(selected_option=None)
+
+        # Redirect back to the question list
+        questions_url = reverse(
+            'questions-list',
+            kwargs={'course_pk': course_pk, 'section_pk': section_pk}
+        )
+        return Response(
+            {
+                'message': 'Exam has been reset successfully.',
+                'attempt_count': section_attempt.attempt_count,
+                'redirect_url': request.build_absolute_uri(questions_url)
+            },
+            status=status.HTTP_200_OK
+        )
+
+
 class PromotionViewSet(viewsets.ModelViewSet):
     serializer_class = PromotionSerializer
     permission_classes = [IsInstructorOrReadOnly]
@@ -827,36 +759,48 @@ class CoreValueViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
 
 
-
 class StaffMemberViewSet(viewsets.ModelViewSet):
     queryset = StaffMember.objects.all()
-    serializer_class = StaffMemberSerializer
+    serializer_class = StaffMemberSerializer 
     permission_classes = [IsAdminOrReadOnly]
 
-    @action(detail=True, methods=['get'], url_path='fb')
-    def get_fb(self, request, pk=None):
-        staff_member = self.get_object()
-        return Response({'fb': staff_member.fb})
+    @action(detail=False, methods=['get'], url_path='social-media-links')
+    def get_social_media_links(self, request):
+        try:
+            
+            # Get the admin's details (assuming is_admin is a boolean field in StaffMember)
+            admin = StaffMember.objects.filter(is_admin=True).first()
+            if not admin:
+                return Response(
+                    {"detail": "No admin staff member found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
 
-    @action(detail=True, methods=['get'], url_path='linkedin')
-    def get_linkedin(self, request, pk=None):
-        staff_member = self.get_object()
-        return Response({'linkedin': staff_member.linkedin})
+            # Serialize only the social media links
+            serializer = SocialMediaLinksSerializer(admin)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['get'], url_path='twitter')
-    def get_twitter(self, request, pk=None):
-        staff_member = self.get_object()
-        return Response({'twitter': staff_member.twitter})
+        except Exception as e:
+            # Handle unexpected errors
+            return Response(
+                {"error": f"An unexpected error occurred: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
-    @action(detail=True, methods=['get'], url_path='tiktok')
-    def get_tiktok(self, request, pk=None):
-        staff_member = self.get_object()
-        return Response({'tiktok': staff_member.tiktok})
 
-    @action(detail=True, methods=['get'], url_path='telegram_channel')
-    def get_telegram_channel(self, request, pk=None):
-        staff_member = self.get_object()
-        return Response({'telegram_channel': staff_member.telegram_channel})
+class SocialMediaLinksView(APIView):
+    def get(self, request):
+        try:
+            # Fetch the admin staff member
+            admin = StaffMember.objects.filter(is_admin=True).first() or StaffMember.objects.first()
+            if not admin:
+                return Response({"detail": "Admin user not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Serialize social media links
+            serializer = SocialMediaLinksSerializer(admin)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class TestimonialViewSet(viewsets.ModelViewSet):

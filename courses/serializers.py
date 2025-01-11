@@ -97,7 +97,6 @@ class CourseSerializer(serializers.ModelSerializer):
         return obj.get_rating_count()
 
 
-
 class SimpleCourseSerializer(serializers.ModelSerializer):
     instructor = serializers.SerializerMethodField()
     class Meta:
@@ -138,23 +137,28 @@ class SectionSerializer(serializers.ModelSerializer):
         fields = ['id', 'course', 'title', 'number_of_lessons', 'total_duration', 'lessons']
 
 
-import logging
-
-logger = logging.getLogger(__name__)
-
 class OptionSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
     class Meta:
         model = Option
         fields = ['id', 'text', 'is_correct']
 
-
 class QuestionSerializer(serializers.ModelSerializer):
-    options = OptionSerializer(many=True)
+    options = serializers.SerializerMethodField()
 
     class Meta:
         model = Question
         fields = ['id', 'text', 'options', 'section']
+
+    def get_options(self, obj):
+        # Check if the context has a flag to include `is_correct`
+        show_correctness = self.context.get('show_correctness', False)
+        if show_correctness:
+            # Use the full OptionSerializer with `is_correct`
+            return OptionSerializer(obj.options.all(), many=True).data
+        else:
+            # Exclude `is_correct` by using a simplified serializer
+            return OptionSerializerWithoutCorrectness(obj.options.all(), many=True).data
 
     def create(self, validated_data):
         options_data = validated_data.pop('options', [])
@@ -171,7 +175,6 @@ class QuestionSerializer(serializers.ModelSerializer):
 
         # Create a dictionary of existing options with their IDs
         existing_options = {option.id: option for option in instance.options.all()}
-        logger.debug(f'Existing options: {existing_options}')
 
         # Update existing options and create new ones if necessary
         for option_data in options_data:
@@ -181,17 +184,22 @@ class QuestionSerializer(serializers.ModelSerializer):
                 option.text = option_data.get('text', option.text)
                 option.is_correct = option_data.get('is_correct', option.is_correct)
                 option.save()
-                logger.debug(f'Updated existing option: {option}')
                 del existing_options[option_id]  # Remove updated options from the dict
             else:
                 Option.objects.create(question=instance, **option_data)
-                logger.debug(f'Created new option: {option}')
 
         # Delete any options that were not included in the update
         for option_id, option in existing_options.items():
             option.delete()
 
         return instance
+
+
+
+class OptionSerializerWithoutCorrectness(serializers.ModelSerializer):
+    class Meta:
+        model = Option
+        fields = ['id', 'text']
 
 
 class StudentAnswerSerializer(serializers.ModelSerializer):
@@ -245,19 +253,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class CustomerSerializer(serializers.ModelSerializer):
     pass
-    '''
-    class Meta:
-        model = Customer
-        fields = ['bio', 'website', 'profile_picture']
-        #exclude = ['id', 'user']
 
-        def update(self, instance, validated_data):
-            instance.bio = validated_data.get('bio', instance.bio)
-            instance.profile_picture = validated_data.get('profile_picture', instance.profile_picture)
-            instance.website = validated_data.get('website', instance.website)
-            instance.save()
-            return instance
-    '''
 
 class InstructorEarningsSerializer(serializers.ModelSerializer):
     earnings_after_deduction = serializers.SerializerMethodField()
@@ -397,6 +393,10 @@ class StaffMemberSerializer(serializers.ModelSerializer):
         model = StaffMember
         fields = '__all__'
 
+class SocialMediaLinksSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StaffMember
+        fields = ['fb', 'linkedin', 'twitter', 'tiktok', 'telegram_channel']
 
 class TestimonialSerializer(serializers.ModelSerializer):
     class Meta:
