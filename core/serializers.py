@@ -23,7 +23,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(BaseUserSerializer):
-    profile_picture = serializers.ImageField(read_only=True)
+    profile_picture = serializers.ImageField(read_only=False)
    
     #role = serializers.ChoiceField(choices=User.ROLE_CHOICES, required=True)
     class Meta(BaseUserSerializer.Meta):
