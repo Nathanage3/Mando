@@ -391,7 +391,16 @@ class CoreValueSerializer(serializers.ModelSerializer):
 class StaffMemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = StaffMember
-        fields = '__all__'
+        exclude = ['is_admin']  # Exclude sensitive admin details
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.is_admin:
+            # Remove sensitive fields for admin staff members
+            representation.pop('phone')
+            representation.pop('email')
+        return representation
+
 
 class SocialMediaLinksSerializer(serializers.ModelSerializer):
     class Meta:

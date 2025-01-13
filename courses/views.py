@@ -764,44 +764,28 @@ class StaffMemberViewSet(viewsets.ModelViewSet):
     serializer_class = StaffMemberSerializer 
     permission_classes = [IsAdminOrReadOnly]
 
-    @action(detail=False, methods=['get'], url_path='social-media-links')
-    def get_social_media_links(self, request):
+
+class SocialMediaLinksView(APIView):
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
         try:
-            
-            # Get the admin's details (assuming is_admin is a boolean field in StaffMember)
+            # Fetch the admin staff member
             admin = StaffMember.objects.filter(is_admin=True).first()
             if not admin:
                 return Response(
                     {"detail": "No admin staff member found."},
                     status=status.HTTP_404_NOT_FOUND,
                 )
-
-            # Serialize only the social media links
-            serializer = SocialMediaLinksSerializer(admin)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            # Handle unexpected errors
-            return Response(
-                {"error": f"An unexpected error occurred: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-
-class SocialMediaLinksView(APIView):
-    def get(self, request):
-        try:
-            # Fetch the admin staff member
-            admin = StaffMember.objects.filter(is_admin=True).first() or StaffMember.objects.first()
-            if not admin:
-                return Response({"detail": "Admin user not found"}, status=status.HTTP_404_NOT_FOUND)
             
             # Serialize social media links
             serializer = SocialMediaLinksSerializer(admin)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+            return Response(
+                {"error": f"An unexpected error occurred: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 class TestimonialViewSet(viewsets.ModelViewSet):
     queryset = Testimonial.objects.all()
